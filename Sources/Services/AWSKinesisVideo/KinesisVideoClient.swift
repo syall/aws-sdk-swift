@@ -23,6 +23,9 @@ public class KinesisVideoClient {
         decoder.dateDecodingStrategy = .secondsSince1970
         decoder.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         self.decoder = config.decoder ?? decoder
+        var modeledAuthSchemes: [ClientRuntime.AuthScheme] = Array()
+        modeledAuthSchemes.append(SigV4AuthScheme())
+        config.authSchemes = config.authSchemes ?? modeledAuthSchemes
         self.config = config
     }
 
@@ -42,13 +45,16 @@ extension KinesisVideoClient {
 
     public struct ServiceSpecificConfiguration: AWSServiceSpecificConfiguration {
         public typealias AWSServiceEndpointResolver = EndpointResolver
+        public typealias AWSAuthSchemeResolver = KinesisVideoAuthSchemeResolver
 
         public var serviceName: String { "Kinesis Video" }
         public var clientName: String { "KinesisVideoClient" }
+        public var authSchemeResolver: any KinesisVideoAuthSchemeResolver
         public var endpointResolver: EndpointResolver
 
-        public init(endpointResolver: EndpointResolver? = nil) throws {
+        public init(endpointResolver: EndpointResolver? = nil, authSchemeResolver: (any KinesisVideoAuthSchemeResolver)? = nil) throws {
             self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()
+            self.authSchemeResolver = authSchemeResolver ?? DefaultKinesisVideoAuthSchemeResolver()
         }
     }
 }
@@ -71,7 +77,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter CreateSignalingChannelInput : [no documentation found]
     ///
-    /// - Returns: `CreateSignalingChannelOutputResponse` : [no documentation found]
+    /// - Returns: `CreateSignalingChannelOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -88,7 +94,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `TagsPerResourceExceededLimitException` : You have exceeded the limit of tags that you can associate with the resource. A Kinesis video stream can support up to 50 tags.
-    public func createSignalingChannel(input: CreateSignalingChannelInput) async throws -> CreateSignalingChannelOutputResponse
+    public func createSignalingChannel(input: CreateSignalingChannelInput) async throws -> CreateSignalingChannelOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -99,25 +105,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateSignalingChannelInput, CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>(id: "createSignalingChannel")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateSignalingChannelInput, CreateSignalingChannelOutput, CreateSignalingChannelOutputError>(id: "createSignalingChannel")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutput, CreateSignalingChannelOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSignalingChannelOutput, CreateSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutputResponse>(xmlName: "CreateSignalingChannelInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, CreateSignalingChannelOutput, CreateSignalingChannelOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSignalingChannelInput, CreateSignalingChannelOutput>(xmlName: "CreateSignalingChannelInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSignalingChannelOutputResponse, CreateSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSignalingChannelOutput, CreateSignalingChannelOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateSignalingChannelOutput, CreateSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSignalingChannelOutput, CreateSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSignalingChannelOutput, CreateSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -126,7 +135,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter CreateStreamInput : [no documentation found]
     ///
-    /// - Returns: `CreateStreamOutputResponse` : [no documentation found]
+    /// - Returns: `CreateStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -144,7 +153,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `TagsPerResourceExceededLimitException` : You have exceeded the limit of tags that you can associate with the resource. A Kinesis video stream can support up to 50 tags.
-    public func createStream(input: CreateStreamInput) async throws -> CreateStreamOutputResponse
+    public func createStream(input: CreateStreamInput) async throws -> CreateStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -155,25 +164,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateStreamInput, CreateStreamOutputResponse, CreateStreamOutputError>(id: "createStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateStreamInput, CreateStreamOutputResponse, CreateStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateStreamInput, CreateStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateStreamInput, CreateStreamOutput, CreateStreamOutputError>(id: "createStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateStreamInput, CreateStreamOutput, CreateStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateStreamInput, CreateStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateStreamOutputResponse, CreateStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateStreamOutput, CreateStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateStreamInput, CreateStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateStreamInput, CreateStreamOutputResponse>(xmlName: "CreateStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, CreateStreamOutput, CreateStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateStreamInput, CreateStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateStreamInput, CreateStreamOutput>(xmlName: "CreateStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateStreamOutputResponse, CreateStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateStreamOutputResponse, CreateStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateStreamOutputResponse, CreateStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateStreamOutputResponse, CreateStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateStreamOutput, CreateStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateStreamOutput, CreateStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateStreamOutput, CreateStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateStreamOutput, CreateStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -182,7 +194,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DeleteEdgeConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DeleteEdgeConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteEdgeConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -192,7 +204,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `StreamEdgeConfigurationNotFoundException` : The Exception rendered when the Amazon Kinesis Video Stream can't find a stream's edge configuration that you specified.
-    public func deleteEdgeConfiguration(input: DeleteEdgeConfigurationInput) async throws -> DeleteEdgeConfigurationOutputResponse
+    public func deleteEdgeConfiguration(input: DeleteEdgeConfigurationInput) async throws -> DeleteEdgeConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -203,25 +215,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>(id: "deleteEdgeConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>(id: "deleteEdgeConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutputResponse>(xmlName: "DeleteEdgeConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteEdgeConfigurationInput, DeleteEdgeConfigurationOutput>(xmlName: "DeleteEdgeConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteEdgeConfigurationOutputResponse, DeleteEdgeConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteEdgeConfigurationOutput, DeleteEdgeConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -230,7 +245,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DeleteSignalingChannelInput : [no documentation found]
     ///
-    /// - Returns: `DeleteSignalingChannelOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteSignalingChannelOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -247,7 +262,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `VersionMismatchException` : The stream version that you specified is not the latest version. To get the latest version, use the [DescribeStream](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeStream.html) API.
-    public func deleteSignalingChannel(input: DeleteSignalingChannelInput) async throws -> DeleteSignalingChannelOutputResponse
+    public func deleteSignalingChannel(input: DeleteSignalingChannelInput) async throws -> DeleteSignalingChannelOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -258,25 +273,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteSignalingChannelInput, DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>(id: "deleteSignalingChannel")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteSignalingChannelInput, DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>(id: "deleteSignalingChannel")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutputResponse>(xmlName: "DeleteSignalingChannelInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteSignalingChannelInput, DeleteSignalingChannelOutput>(xmlName: "DeleteSignalingChannelInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSignalingChannelOutputResponse, DeleteSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSignalingChannelOutput, DeleteSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -285,7 +303,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DeleteStreamInput : [no documentation found]
     ///
-    /// - Returns: `DeleteStreamOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -302,7 +320,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `VersionMismatchException` : The stream version that you specified is not the latest version. To get the latest version, use the [DescribeStream](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeStream.html) API.
-    public func deleteStream(input: DeleteStreamInput) async throws -> DeleteStreamOutputResponse
+    public func deleteStream(input: DeleteStreamInput) async throws -> DeleteStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -313,25 +331,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteStreamInput, DeleteStreamOutputResponse, DeleteStreamOutputError>(id: "deleteStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteStreamInput, DeleteStreamOutputResponse, DeleteStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteStreamInput, DeleteStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteStreamInput, DeleteStreamOutput, DeleteStreamOutputError>(id: "deleteStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteStreamInput, DeleteStreamOutput, DeleteStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteStreamInput, DeleteStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteStreamOutputResponse, DeleteStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteStreamOutput, DeleteStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteStreamInput, DeleteStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteStreamInput, DeleteStreamOutputResponse>(xmlName: "DeleteStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DeleteStreamOutput, DeleteStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteStreamInput, DeleteStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteStreamInput, DeleteStreamOutput>(xmlName: "DeleteStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteStreamOutputResponse, DeleteStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteStreamOutputResponse, DeleteStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteStreamOutputResponse, DeleteStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteStreamOutputResponse, DeleteStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteStreamOutput, DeleteStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteStreamOutput, DeleteStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteStreamOutput, DeleteStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteStreamOutput, DeleteStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -340,7 +361,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeEdgeConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DescribeEdgeConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeEdgeConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -350,7 +371,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `StreamEdgeConfigurationNotFoundException` : The Exception rendered when the Amazon Kinesis Video Stream can't find a stream's edge configuration that you specified.
-    public func describeEdgeConfiguration(input: DescribeEdgeConfigurationInput) async throws -> DescribeEdgeConfigurationOutputResponse
+    public func describeEdgeConfiguration(input: DescribeEdgeConfigurationInput) async throws -> DescribeEdgeConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -361,25 +382,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>(id: "describeEdgeConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>(id: "describeEdgeConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutputResponse>(xmlName: "DescribeEdgeConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeEdgeConfigurationInput, DescribeEdgeConfigurationOutput>(xmlName: "DescribeEdgeConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeEdgeConfigurationOutputResponse, DescribeEdgeConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeEdgeConfigurationOutput, DescribeEdgeConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -388,7 +412,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeImageGenerationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DescribeImageGenerationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeImageGenerationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -397,7 +421,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeImageGenerationConfiguration(input: DescribeImageGenerationConfigurationInput) async throws -> DescribeImageGenerationConfigurationOutputResponse
+    public func describeImageGenerationConfiguration(input: DescribeImageGenerationConfigurationInput) async throws -> DescribeImageGenerationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -408,25 +432,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>(id: "describeImageGenerationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>(id: "describeImageGenerationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutputResponse>(xmlName: "DescribeImageGenerationConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeImageGenerationConfigurationInput, DescribeImageGenerationConfigurationOutput>(xmlName: "DescribeImageGenerationConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeImageGenerationConfigurationOutputResponse, DescribeImageGenerationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeImageGenerationConfigurationOutput, DescribeImageGenerationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -435,7 +462,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeMappedResourceConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DescribeMappedResourceConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeMappedResourceConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -444,7 +471,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeMappedResourceConfiguration(input: DescribeMappedResourceConfigurationInput) async throws -> DescribeMappedResourceConfigurationOutputResponse
+    public func describeMappedResourceConfiguration(input: DescribeMappedResourceConfigurationInput) async throws -> DescribeMappedResourceConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -455,25 +482,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>(id: "describeMappedResourceConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>(id: "describeMappedResourceConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutputResponse>(xmlName: "DescribeMappedResourceConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeMappedResourceConfigurationInput, DescribeMappedResourceConfigurationOutput>(xmlName: "DescribeMappedResourceConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeMappedResourceConfigurationOutputResponse, DescribeMappedResourceConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeMappedResourceConfigurationOutput, DescribeMappedResourceConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -482,7 +512,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeMediaStorageConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DescribeMediaStorageConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeMediaStorageConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -491,7 +521,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeMediaStorageConfiguration(input: DescribeMediaStorageConfigurationInput) async throws -> DescribeMediaStorageConfigurationOutputResponse
+    public func describeMediaStorageConfiguration(input: DescribeMediaStorageConfigurationInput) async throws -> DescribeMediaStorageConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -502,25 +532,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>(id: "describeMediaStorageConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>(id: "describeMediaStorageConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutputResponse>(xmlName: "DescribeMediaStorageConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeMediaStorageConfigurationInput, DescribeMediaStorageConfigurationOutput>(xmlName: "DescribeMediaStorageConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeMediaStorageConfigurationOutputResponse, DescribeMediaStorageConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeMediaStorageConfigurationOutput, DescribeMediaStorageConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -529,7 +562,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeNotificationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DescribeNotificationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeNotificationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -538,7 +571,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeNotificationConfiguration(input: DescribeNotificationConfigurationInput) async throws -> DescribeNotificationConfigurationOutputResponse
+    public func describeNotificationConfiguration(input: DescribeNotificationConfigurationInput) async throws -> DescribeNotificationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -549,25 +582,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>(id: "describeNotificationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>(id: "describeNotificationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutputResponse>(xmlName: "DescribeNotificationConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeNotificationConfigurationInput, DescribeNotificationConfigurationOutput>(xmlName: "DescribeNotificationConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeNotificationConfigurationOutputResponse, DescribeNotificationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeNotificationConfigurationOutput, DescribeNotificationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -576,7 +612,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeSignalingChannelInput : [no documentation found]
     ///
-    /// - Returns: `DescribeSignalingChannelOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeSignalingChannelOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -585,7 +621,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeSignalingChannel(input: DescribeSignalingChannelInput) async throws -> DescribeSignalingChannelOutputResponse
+    public func describeSignalingChannel(input: DescribeSignalingChannelInput) async throws -> DescribeSignalingChannelOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -596,25 +632,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeSignalingChannelInput, DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>(id: "describeSignalingChannel")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeSignalingChannelInput, DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>(id: "describeSignalingChannel")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutputResponse>(xmlName: "DescribeSignalingChannelInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeSignalingChannelInput, DescribeSignalingChannelOutput>(xmlName: "DescribeSignalingChannelInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeSignalingChannelOutputResponse, DescribeSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeSignalingChannelOutput, DescribeSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -623,7 +662,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter DescribeStreamInput : [no documentation found]
     ///
-    /// - Returns: `DescribeStreamOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -632,7 +671,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func describeStream(input: DescribeStreamInput) async throws -> DescribeStreamOutputResponse
+    public func describeStream(input: DescribeStreamInput) async throws -> DescribeStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -643,25 +682,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeStreamInput, DescribeStreamOutputResponse, DescribeStreamOutputError>(id: "describeStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeStreamInput, DescribeStreamOutputResponse, DescribeStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeStreamInput, DescribeStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeStreamInput, DescribeStreamOutput, DescribeStreamOutputError>(id: "describeStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeStreamInput, DescribeStreamOutput, DescribeStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeStreamInput, DescribeStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeStreamOutputResponse, DescribeStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeStreamOutput, DescribeStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeStreamInput, DescribeStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeStreamInput, DescribeStreamOutputResponse>(xmlName: "DescribeStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, DescribeStreamOutput, DescribeStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeStreamInput, DescribeStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeStreamInput, DescribeStreamOutput>(xmlName: "DescribeStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeStreamOutputResponse, DescribeStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeStreamOutputResponse, DescribeStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeStreamOutputResponse, DescribeStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeStreamOutputResponse, DescribeStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeStreamOutput, DescribeStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeStreamOutput, DescribeStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeStreamOutput, DescribeStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeStreamOutput, DescribeStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -670,7 +712,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter GetDataEndpointInput : [no documentation found]
     ///
-    /// - Returns: `GetDataEndpointOutputResponse` : [no documentation found]
+    /// - Returns: `GetDataEndpointOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -679,7 +721,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func getDataEndpoint(input: GetDataEndpointInput) async throws -> GetDataEndpointOutputResponse
+    public func getDataEndpoint(input: GetDataEndpointInput) async throws -> GetDataEndpointOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -690,25 +732,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetDataEndpointInput, GetDataEndpointOutputResponse, GetDataEndpointOutputError>(id: "getDataEndpoint")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataEndpointInput, GetDataEndpointOutputResponse, GetDataEndpointOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataEndpointInput, GetDataEndpointOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetDataEndpointInput, GetDataEndpointOutput, GetDataEndpointOutputError>(id: "getDataEndpoint")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataEndpointInput, GetDataEndpointOutput, GetDataEndpointOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataEndpointInput, GetDataEndpointOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataEndpointOutputResponse, GetDataEndpointOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataEndpointOutput, GetDataEndpointOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetDataEndpointInput, GetDataEndpointOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetDataEndpointInput, GetDataEndpointOutputResponse>(xmlName: "GetDataEndpointInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, GetDataEndpointOutput, GetDataEndpointOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetDataEndpointInput, GetDataEndpointOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetDataEndpointInput, GetDataEndpointOutput>(xmlName: "GetDataEndpointInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataEndpointOutputResponse, GetDataEndpointOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetDataEndpointOutputResponse, GetDataEndpointOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataEndpointOutputResponse, GetDataEndpointOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataEndpointOutputResponse, GetDataEndpointOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataEndpointOutput, GetDataEndpointOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetDataEndpointOutput, GetDataEndpointOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataEndpointOutput, GetDataEndpointOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataEndpointOutput, GetDataEndpointOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -717,7 +762,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter GetSignalingChannelEndpointInput : [no documentation found]
     ///
-    /// - Returns: `GetSignalingChannelEndpointOutputResponse` : [no documentation found]
+    /// - Returns: `GetSignalingChannelEndpointOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -733,7 +778,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func getSignalingChannelEndpoint(input: GetSignalingChannelEndpointInput) async throws -> GetSignalingChannelEndpointOutputResponse
+    public func getSignalingChannelEndpoint(input: GetSignalingChannelEndpointInput) async throws -> GetSignalingChannelEndpointOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -744,25 +789,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>(id: "getSignalingChannelEndpoint")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>(id: "getSignalingChannelEndpoint")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutputResponse>(xmlName: "GetSignalingChannelEndpointInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetSignalingChannelEndpointInput, GetSignalingChannelEndpointOutput>(xmlName: "GetSignalingChannelEndpointInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetSignalingChannelEndpointOutputResponse, GetSignalingChannelEndpointOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetSignalingChannelEndpointOutput, GetSignalingChannelEndpointOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -771,7 +819,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter ListEdgeAgentConfigurationsInput : [no documentation found]
     ///
-    /// - Returns: `ListEdgeAgentConfigurationsOutputResponse` : [no documentation found]
+    /// - Returns: `ListEdgeAgentConfigurationsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -779,7 +827,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
-    public func listEdgeAgentConfigurations(input: ListEdgeAgentConfigurationsInput) async throws -> ListEdgeAgentConfigurationsOutputResponse
+    public func listEdgeAgentConfigurations(input: ListEdgeAgentConfigurationsInput) async throws -> ListEdgeAgentConfigurationsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -790,25 +838,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>(id: "listEdgeAgentConfigurations")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>(id: "listEdgeAgentConfigurations")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutputResponse>(xmlName: "ListEdgeAgentConfigurationsInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListEdgeAgentConfigurationsInput, ListEdgeAgentConfigurationsOutput>(xmlName: "ListEdgeAgentConfigurationsInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListEdgeAgentConfigurationsOutputResponse, ListEdgeAgentConfigurationsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListEdgeAgentConfigurationsOutput, ListEdgeAgentConfigurationsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -817,7 +868,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter ListSignalingChannelsInput : [no documentation found]
     ///
-    /// - Returns: `ListSignalingChannelsOutputResponse` : [no documentation found]
+    /// - Returns: `ListSignalingChannelsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -825,7 +876,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `AccessDeniedException` : You do not have required permissions to perform this operation.
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
-    public func listSignalingChannels(input: ListSignalingChannelsInput) async throws -> ListSignalingChannelsOutputResponse
+    public func listSignalingChannels(input: ListSignalingChannelsInput) async throws -> ListSignalingChannelsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -836,25 +887,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListSignalingChannelsInput, ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>(id: "listSignalingChannels")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListSignalingChannelsInput, ListSignalingChannelsOutput, ListSignalingChannelsOutputError>(id: "listSignalingChannels")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutput, ListSignalingChannelsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListSignalingChannelsOutput, ListSignalingChannelsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutputResponse>(xmlName: "ListSignalingChannelsInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, ListSignalingChannelsOutput, ListSignalingChannelsOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListSignalingChannelsInput, ListSignalingChannelsOutput>(xmlName: "ListSignalingChannelsInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListSignalingChannelsOutputResponse, ListSignalingChannelsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListSignalingChannelsOutput, ListSignalingChannelsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListSignalingChannelsOutput, ListSignalingChannelsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListSignalingChannelsOutput, ListSignalingChannelsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListSignalingChannelsOutput, ListSignalingChannelsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -863,14 +917,14 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter ListStreamsInput : [no documentation found]
     ///
-    /// - Returns: `ListStreamsOutputResponse` : [no documentation found]
+    /// - Returns: `ListStreamsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
-    public func listStreams(input: ListStreamsInput) async throws -> ListStreamsOutputResponse
+    public func listStreams(input: ListStreamsInput) async throws -> ListStreamsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -881,25 +935,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListStreamsInput, ListStreamsOutputResponse, ListStreamsOutputError>(id: "listStreams")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListStreamsInput, ListStreamsOutputResponse, ListStreamsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListStreamsInput, ListStreamsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListStreamsInput, ListStreamsOutput, ListStreamsOutputError>(id: "listStreams")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListStreamsInput, ListStreamsOutput, ListStreamsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListStreamsInput, ListStreamsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListStreamsOutputResponse, ListStreamsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListStreamsOutput, ListStreamsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListStreamsInput, ListStreamsOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListStreamsInput, ListStreamsOutputResponse>(xmlName: "ListStreamsInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, ListStreamsOutput, ListStreamsOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListStreamsInput, ListStreamsOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListStreamsInput, ListStreamsOutput>(xmlName: "ListStreamsInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListStreamsOutputResponse, ListStreamsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListStreamsOutputResponse, ListStreamsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListStreamsOutputResponse, ListStreamsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListStreamsOutputResponse, ListStreamsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListStreamsOutput, ListStreamsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListStreamsOutput, ListStreamsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListStreamsOutput, ListStreamsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListStreamsOutput, ListStreamsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -908,7 +965,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter ListTagsForResourceInput : [no documentation found]
     ///
-    /// - Returns: `ListTagsForResourceOutputResponse` : [no documentation found]
+    /// - Returns: `ListTagsForResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -917,7 +974,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func listTagsForResource(input: ListTagsForResourceInput) async throws -> ListTagsForResourceOutputResponse
+    public func listTagsForResource(input: ListTagsForResourceInput) async throws -> ListTagsForResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -928,25 +985,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListTagsForResourceInput, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(id: "listTagsForResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListTagsForResourceInput, ListTagsForResourceOutput, ListTagsForResourceOutputError>(id: "listTagsForResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse>(xmlName: "ListTagsForResourceInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput>(xmlName: "ListTagsForResourceInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForResourceOutput, ListTagsForResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -955,7 +1015,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter ListTagsForStreamInput : [no documentation found]
     ///
-    /// - Returns: `ListTagsForStreamOutputResponse` : [no documentation found]
+    /// - Returns: `ListTagsForStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -965,7 +1025,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidResourceFormatException` : The format of the StreamARN is invalid.
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func listTagsForStream(input: ListTagsForStreamInput) async throws -> ListTagsForStreamOutputResponse
+    public func listTagsForStream(input: ListTagsForStreamInput) async throws -> ListTagsForStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -976,25 +1036,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListTagsForStreamInput, ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>(id: "listTagsForStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForStreamInput, ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForStreamInput, ListTagsForStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListTagsForStreamInput, ListTagsForStreamOutput, ListTagsForStreamOutputError>(id: "listTagsForStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForStreamInput, ListTagsForStreamOutput, ListTagsForStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForStreamInput, ListTagsForStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForStreamOutput, ListTagsForStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsForStreamInput, ListTagsForStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsForStreamInput, ListTagsForStreamOutputResponse>(xmlName: "ListTagsForStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, ListTagsForStreamOutput, ListTagsForStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsForStreamInput, ListTagsForStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsForStreamInput, ListTagsForStreamOutput>(xmlName: "ListTagsForStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForStreamOutputResponse, ListTagsForStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForStreamOutput, ListTagsForStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListTagsForStreamOutput, ListTagsForStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForStreamOutput, ListTagsForStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForStreamOutput, ListTagsForStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1003,7 +1066,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter StartEdgeConfigurationUpdateInput : [no documentation found]
     ///
-    /// - Returns: `StartEdgeConfigurationUpdateOutputResponse` : [no documentation found]
+    /// - Returns: `StartEdgeConfigurationUpdateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1020,7 +1083,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func startEdgeConfigurationUpdate(input: StartEdgeConfigurationUpdateInput) async throws -> StartEdgeConfigurationUpdateOutputResponse
+    public func startEdgeConfigurationUpdate(input: StartEdgeConfigurationUpdateInput) async throws -> StartEdgeConfigurationUpdateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1031,25 +1094,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>(id: "startEdgeConfigurationUpdate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>(id: "startEdgeConfigurationUpdate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutputResponse>(xmlName: "StartEdgeConfigurationUpdateInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StartEdgeConfigurationUpdateInput, StartEdgeConfigurationUpdateOutput>(xmlName: "StartEdgeConfigurationUpdateInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StartEdgeConfigurationUpdateOutputResponse, StartEdgeConfigurationUpdateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StartEdgeConfigurationUpdateOutput, StartEdgeConfigurationUpdateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1058,7 +1124,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter TagResourceInput : [no documentation found]
     ///
-    /// - Returns: `TagResourceOutputResponse` : [no documentation found]
+    /// - Returns: `TagResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1068,7 +1134,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `TagsPerResourceExceededLimitException` : You have exceeded the limit of tags that you can associate with the resource. A Kinesis video stream can support up to 50 tags.
-    public func tagResource(input: TagResourceInput) async throws -> TagResourceOutputResponse
+    public func tagResource(input: TagResourceInput) async throws -> TagResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1079,25 +1145,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TagResourceInput, TagResourceOutputResponse, TagResourceOutputError>(id: "tagResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagResourceInput, TagResourceOutputResponse, TagResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagResourceInput, TagResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TagResourceInput, TagResourceOutput, TagResourceOutputError>(id: "tagResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagResourceInput, TagResourceOutput, TagResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagResourceInput, TagResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagResourceOutputResponse, TagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagResourceOutput, TagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagResourceInput, TagResourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagResourceInput, TagResourceOutputResponse>(xmlName: "TagResourceInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, TagResourceOutput, TagResourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagResourceInput, TagResourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagResourceInput, TagResourceOutput>(xmlName: "TagResourceInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagResourceOutputResponse, TagResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TagResourceOutputResponse, TagResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagResourceOutputResponse, TagResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagResourceOutputResponse, TagResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagResourceOutput, TagResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TagResourceOutput, TagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagResourceOutput, TagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagResourceOutput, TagResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1106,7 +1175,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter TagStreamInput : [no documentation found]
     ///
-    /// - Returns: `TagStreamOutputResponse` : [no documentation found]
+    /// - Returns: `TagStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1117,7 +1186,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `TagsPerResourceExceededLimitException` : You have exceeded the limit of tags that you can associate with the resource. A Kinesis video stream can support up to 50 tags.
-    public func tagStream(input: TagStreamInput) async throws -> TagStreamOutputResponse
+    public func tagStream(input: TagStreamInput) async throws -> TagStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1128,25 +1197,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TagStreamInput, TagStreamOutputResponse, TagStreamOutputError>(id: "tagStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagStreamInput, TagStreamOutputResponse, TagStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagStreamInput, TagStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TagStreamInput, TagStreamOutput, TagStreamOutputError>(id: "tagStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagStreamInput, TagStreamOutput, TagStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagStreamInput, TagStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagStreamOutputResponse, TagStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagStreamOutput, TagStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagStreamInput, TagStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagStreamInput, TagStreamOutputResponse>(xmlName: "TagStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, TagStreamOutput, TagStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagStreamInput, TagStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagStreamInput, TagStreamOutput>(xmlName: "TagStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagStreamOutputResponse, TagStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TagStreamOutputResponse, TagStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagStreamOutputResponse, TagStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagStreamOutputResponse, TagStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagStreamOutput, TagStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TagStreamOutput, TagStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagStreamOutput, TagStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagStreamOutput, TagStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1155,7 +1227,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UntagResourceInput : [no documentation found]
     ///
-    /// - Returns: `UntagResourceOutputResponse` : [no documentation found]
+    /// - Returns: `UntagResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1164,7 +1236,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `ClientLimitExceededException` : Kinesis Video Streams has throttled the request because you have exceeded the limit of allowed client calls. Try making the call later.
     /// - `InvalidArgumentException` : The value for this input parameter is invalid.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func untagResource(input: UntagResourceInput) async throws -> UntagResourceOutputResponse
+    public func untagResource(input: UntagResourceInput) async throws -> UntagResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1175,25 +1247,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UntagResourceInput, UntagResourceOutputResponse, UntagResourceOutputError>(id: "untagResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagResourceInput, UntagResourceOutputResponse, UntagResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagResourceInput, UntagResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UntagResourceInput, UntagResourceOutput, UntagResourceOutputError>(id: "untagResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagResourceInput, UntagResourceOutput, UntagResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagResourceInput, UntagResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagResourceOutput, UntagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagResourceInput, UntagResourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagResourceInput, UntagResourceOutputResponse>(xmlName: "UntagResourceInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UntagResourceOutput, UntagResourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagResourceInput, UntagResourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagResourceInput, UntagResourceOutput>(xmlName: "UntagResourceInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagResourceOutputResponse, UntagResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UntagResourceOutputResponse, UntagResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagResourceOutput, UntagResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UntagResourceOutput, UntagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagResourceOutput, UntagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagResourceOutput, UntagResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1202,7 +1277,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UntagStreamInput : [no documentation found]
     ///
-    /// - Returns: `UntagStreamOutputResponse` : [no documentation found]
+    /// - Returns: `UntagStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1212,7 +1287,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// - `InvalidResourceFormatException` : The format of the StreamARN is invalid.
     /// - `NotAuthorizedException` : The caller is not authorized to perform this operation.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func untagStream(input: UntagStreamInput) async throws -> UntagStreamOutputResponse
+    public func untagStream(input: UntagStreamInput) async throws -> UntagStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1223,25 +1298,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UntagStreamInput, UntagStreamOutputResponse, UntagStreamOutputError>(id: "untagStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagStreamInput, UntagStreamOutputResponse, UntagStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagStreamInput, UntagStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UntagStreamInput, UntagStreamOutput, UntagStreamOutputError>(id: "untagStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagStreamInput, UntagStreamOutput, UntagStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagStreamInput, UntagStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagStreamOutputResponse, UntagStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagStreamOutput, UntagStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagStreamInput, UntagStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagStreamInput, UntagStreamOutputResponse>(xmlName: "UntagStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UntagStreamOutput, UntagStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagStreamInput, UntagStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagStreamInput, UntagStreamOutput>(xmlName: "UntagStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagStreamOutputResponse, UntagStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UntagStreamOutputResponse, UntagStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagStreamOutputResponse, UntagStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagStreamOutputResponse, UntagStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagStreamOutput, UntagStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UntagStreamOutput, UntagStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagStreamOutput, UntagStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagStreamOutput, UntagStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1254,7 +1332,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateDataRetentionInput : [no documentation found]
     ///
-    /// - Returns: `UpdateDataRetentionOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateDataRetentionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1271,7 +1349,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `VersionMismatchException` : The stream version that you specified is not the latest version. To get the latest version, use the [DescribeStream](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeStream.html) API.
-    public func updateDataRetention(input: UpdateDataRetentionInput) async throws -> UpdateDataRetentionOutputResponse
+    public func updateDataRetention(input: UpdateDataRetentionInput) async throws -> UpdateDataRetentionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1282,25 +1360,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateDataRetentionInput, UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>(id: "updateDataRetention")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateDataRetentionInput, UpdateDataRetentionOutput, UpdateDataRetentionOutputError>(id: "updateDataRetention")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutput, UpdateDataRetentionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataRetentionOutput, UpdateDataRetentionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutputResponse>(xmlName: "UpdateDataRetentionInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateDataRetentionOutput, UpdateDataRetentionOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataRetentionInput, UpdateDataRetentionOutput>(xmlName: "UpdateDataRetentionInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataRetentionOutputResponse, UpdateDataRetentionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataRetentionOutput, UpdateDataRetentionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateDataRetentionOutput, UpdateDataRetentionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataRetentionOutput, UpdateDataRetentionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataRetentionOutput, UpdateDataRetentionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1309,7 +1390,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateImageGenerationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `UpdateImageGenerationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateImageGenerationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1326,7 +1407,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func updateImageGenerationConfiguration(input: UpdateImageGenerationConfigurationInput) async throws -> UpdateImageGenerationConfigurationOutputResponse
+    public func updateImageGenerationConfiguration(input: UpdateImageGenerationConfigurationInput) async throws -> UpdateImageGenerationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1337,25 +1418,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>(id: "updateImageGenerationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>(id: "updateImageGenerationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutputResponse>(xmlName: "UpdateImageGenerationConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateImageGenerationConfigurationInput, UpdateImageGenerationConfigurationOutput>(xmlName: "UpdateImageGenerationConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateImageGenerationConfigurationOutputResponse, UpdateImageGenerationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateImageGenerationConfigurationOutput, UpdateImageGenerationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1371,7 +1455,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateMediaStorageConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `UpdateMediaStorageConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateMediaStorageConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1388,7 +1472,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func updateMediaStorageConfiguration(input: UpdateMediaStorageConfigurationInput) async throws -> UpdateMediaStorageConfigurationOutputResponse
+    public func updateMediaStorageConfiguration(input: UpdateMediaStorageConfigurationInput) async throws -> UpdateMediaStorageConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1399,25 +1483,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>(id: "updateMediaStorageConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>(id: "updateMediaStorageConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutputResponse>(xmlName: "UpdateMediaStorageConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateMediaStorageConfigurationInput, UpdateMediaStorageConfigurationOutput>(xmlName: "UpdateMediaStorageConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateMediaStorageConfigurationOutputResponse, UpdateMediaStorageConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateMediaStorageConfigurationOutput, UpdateMediaStorageConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1426,7 +1513,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateNotificationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `UpdateNotificationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateNotificationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1443,7 +1530,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
-    public func updateNotificationConfiguration(input: UpdateNotificationConfigurationInput) async throws -> UpdateNotificationConfigurationOutputResponse
+    public func updateNotificationConfiguration(input: UpdateNotificationConfigurationInput) async throws -> UpdateNotificationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1454,25 +1541,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>(id: "updateNotificationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>(id: "updateNotificationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutputResponse>(xmlName: "UpdateNotificationConfigurationInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateNotificationConfigurationInput, UpdateNotificationConfigurationOutput>(xmlName: "UpdateNotificationConfigurationInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateNotificationConfigurationOutputResponse, UpdateNotificationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateNotificationConfigurationOutput, UpdateNotificationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1481,7 +1571,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateSignalingChannelInput : [no documentation found]
     ///
-    /// - Returns: `UpdateSignalingChannelOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateSignalingChannelOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1498,7 +1588,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `VersionMismatchException` : The stream version that you specified is not the latest version. To get the latest version, use the [DescribeStream](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeStream.html) API.
-    public func updateSignalingChannel(input: UpdateSignalingChannelInput) async throws -> UpdateSignalingChannelOutputResponse
+    public func updateSignalingChannel(input: UpdateSignalingChannelInput) async throws -> UpdateSignalingChannelOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1509,25 +1599,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateSignalingChannelInput, UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>(id: "updateSignalingChannel")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateSignalingChannelInput, UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>(id: "updateSignalingChannel")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutputResponse>(xmlName: "UpdateSignalingChannelInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSignalingChannelInput, UpdateSignalingChannelOutput>(xmlName: "UpdateSignalingChannelInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSignalingChannelOutputResponse, UpdateSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSignalingChannelOutput, UpdateSignalingChannelOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1536,7 +1629,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     ///
     /// - Parameter UpdateStreamInput : [no documentation found]
     ///
-    /// - Returns: `UpdateStreamOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateStreamOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1553,7 +1646,7 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
     /// * The DescribeStream or DescribeSignalingChannel API to determine the status of the resource.
     /// - `ResourceNotFoundException` : Amazon Kinesis Video Streams can't find the stream that you specified.
     /// - `VersionMismatchException` : The stream version that you specified is not the latest version. To get the latest version, use the [DescribeStream](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeStream.html) API.
-    public func updateStream(input: UpdateStreamInput) async throws -> UpdateStreamOutputResponse
+    public func updateStream(input: UpdateStreamInput) async throws -> UpdateStreamOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1564,25 +1657,28 @@ extension KinesisVideoClient: KinesisVideoClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "kinesisvideo")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateStreamInput, UpdateStreamOutputResponse, UpdateStreamOutputError>(id: "updateStream")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateStreamInput, UpdateStreamOutputResponse, UpdateStreamOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateStreamInput, UpdateStreamOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateStreamInput, UpdateStreamOutput, UpdateStreamOutputError>(id: "updateStream")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateStreamInput, UpdateStreamOutput, UpdateStreamOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateStreamInput, UpdateStreamOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateStreamOutputResponse, UpdateStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateStreamOutput, UpdateStreamOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateStreamInput, UpdateStreamOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateStreamInput, UpdateStreamOutputResponse>(xmlName: "UpdateStreamInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<KinesisVideoAuthSchemeResolver, UpdateStreamOutput, UpdateStreamOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateStreamInput, UpdateStreamOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateStreamInput, UpdateStreamOutput>(xmlName: "UpdateStreamInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateStreamOutputResponse, UpdateStreamOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateStreamOutputResponse, UpdateStreamOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateStreamOutputResponse, UpdateStreamOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateStreamOutputResponse, UpdateStreamOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateStreamOutput, UpdateStreamOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateStreamOutput, UpdateStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateStreamOutput, UpdateStreamOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateStreamOutput, UpdateStreamOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }

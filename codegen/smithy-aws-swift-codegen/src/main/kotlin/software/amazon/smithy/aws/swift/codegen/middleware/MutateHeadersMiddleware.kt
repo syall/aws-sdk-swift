@@ -18,7 +18,7 @@ class MutateHeadersMiddleware(
 
     override val position = MiddlewarePosition.AFTER
 
-    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String) {
+    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String, clientName: String?) {
         val paramsString = middlewareParamsString()
         writer.write("$operationStackName.${middlewareStep.stringValue()}.intercept(position: ${position.stringValue()}, middleware: \$N($paramsString))", ClientRuntimeTypes.Middleware.MutateHeadersMiddleware)
     }

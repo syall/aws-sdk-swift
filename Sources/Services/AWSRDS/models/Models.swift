@@ -273,6 +273,16 @@ extension AddRoleToDBClusterInputBody: Swift.Decodable {
     }
 }
 
+extension AddRoleToDBClusterOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct AddRoleToDBClusterOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum AddRoleToDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -284,16 +294,6 @@ enum AddRoleToDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension AddRoleToDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct AddRoleToDBClusterOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension AddRoleToDBInstanceInput: Swift.Encodable {
@@ -366,6 +366,16 @@ extension AddRoleToDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension AddRoleToDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct AddRoleToDBInstanceOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum AddRoleToDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -377,16 +387,6 @@ enum AddRoleToDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension AddRoleToDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct AddRoleToDBInstanceOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension AddSourceIdentifierToSubscriptionInput: Swift.Encodable {
@@ -462,22 +462,11 @@ extension AddSourceIdentifierToSubscriptionInputBody: Swift.Decodable {
     }
 }
 
-enum AddSourceIdentifierToSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "SourceNotFound": return try await SourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension AddSourceIdentifierToSubscriptionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension AddSourceIdentifierToSubscriptionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: AddSourceIdentifierToSubscriptionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: AddSourceIdentifierToSubscriptionOutputBody = try responseDecoder.decode(responseBody: data)
             self.eventSubscription = output.eventSubscription
         } else {
             self.eventSubscription = nil
@@ -485,7 +474,7 @@ extension AddSourceIdentifierToSubscriptionOutputResponse: ClientRuntime.HttpRes
     }
 }
 
-public struct AddSourceIdentifierToSubscriptionOutputResponse: Swift.Equatable {
+public struct AddSourceIdentifierToSubscriptionOutput: Swift.Equatable {
     /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
     public var eventSubscription: RDSClientTypes.EventSubscription?
 
@@ -497,11 +486,11 @@ public struct AddSourceIdentifierToSubscriptionOutputResponse: Swift.Equatable {
     }
 }
 
-struct AddSourceIdentifierToSubscriptionOutputResponseBody: Swift.Equatable {
+struct AddSourceIdentifierToSubscriptionOutputBody: Swift.Equatable {
     let eventSubscription: RDSClientTypes.EventSubscription?
 }
 
-extension AddSourceIdentifierToSubscriptionOutputResponseBody: Swift.Decodable {
+extension AddSourceIdentifierToSubscriptionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case eventSubscription = "EventSubscription"
     }
@@ -511,6 +500,17 @@ extension AddSourceIdentifierToSubscriptionOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("AddSourceIdentifierToSubscriptionResult"))
         let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
         eventSubscription = eventSubscriptionDecoded
+    }
+}
+
+enum AddSourceIdentifierToSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "SourceNotFound": return try await SourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -599,6 +599,16 @@ extension AddTagsToResourceInputBody: Swift.Decodable {
     }
 }
 
+extension AddTagsToResourceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct AddTagsToResourceOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum AddTagsToResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -612,16 +622,6 @@ enum AddTagsToResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension AddTagsToResourceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct AddTagsToResourceOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension RDSClientTypes {
@@ -733,23 +733,11 @@ extension ApplyPendingMaintenanceActionInputBody: Swift.Decodable {
     }
 }
 
-enum ApplyPendingMaintenanceActionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ApplyPendingMaintenanceActionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ApplyPendingMaintenanceActionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ApplyPendingMaintenanceActionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ApplyPendingMaintenanceActionOutputBody = try responseDecoder.decode(responseBody: data)
             self.resourcePendingMaintenanceActions = output.resourcePendingMaintenanceActions
         } else {
             self.resourcePendingMaintenanceActions = nil
@@ -757,7 +745,7 @@ extension ApplyPendingMaintenanceActionOutputResponse: ClientRuntime.HttpRespons
     }
 }
 
-public struct ApplyPendingMaintenanceActionOutputResponse: Swift.Equatable {
+public struct ApplyPendingMaintenanceActionOutput: Swift.Equatable {
     /// Describes the pending maintenance actions for a resource.
     public var resourcePendingMaintenanceActions: RDSClientTypes.ResourcePendingMaintenanceActions?
 
@@ -769,11 +757,11 @@ public struct ApplyPendingMaintenanceActionOutputResponse: Swift.Equatable {
     }
 }
 
-struct ApplyPendingMaintenanceActionOutputResponseBody: Swift.Equatable {
+struct ApplyPendingMaintenanceActionOutputBody: Swift.Equatable {
     let resourcePendingMaintenanceActions: RDSClientTypes.ResourcePendingMaintenanceActions?
 }
 
-extension ApplyPendingMaintenanceActionOutputResponseBody: Swift.Decodable {
+extension ApplyPendingMaintenanceActionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case resourcePendingMaintenanceActions = "ResourcePendingMaintenanceActions"
     }
@@ -783,6 +771,18 @@ extension ApplyPendingMaintenanceActionOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ApplyPendingMaintenanceActionResult"))
         let resourcePendingMaintenanceActionsDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ResourcePendingMaintenanceActions.self, forKey: .resourcePendingMaintenanceActions)
         resourcePendingMaintenanceActions = resourcePendingMaintenanceActionsDecoded
+    }
+}
+
+enum ApplyPendingMaintenanceActionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -1100,24 +1100,11 @@ extension AuthorizeDBSecurityGroupIngressInputBody: Swift.Decodable {
     }
 }
 
-enum AuthorizeDBSecurityGroupIngressOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "AuthorizationAlreadyExists": return try await AuthorizationAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "AuthorizationQuotaExceeded": return try await AuthorizationQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBSecurityGroupState": return try await InvalidDBSecurityGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension AuthorizeDBSecurityGroupIngressOutputResponse: ClientRuntime.HttpResponseBinding {
+extension AuthorizeDBSecurityGroupIngressOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: AuthorizeDBSecurityGroupIngressOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: AuthorizeDBSecurityGroupIngressOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSecurityGroup = output.dbSecurityGroup
         } else {
             self.dbSecurityGroup = nil
@@ -1125,7 +1112,7 @@ extension AuthorizeDBSecurityGroupIngressOutputResponse: ClientRuntime.HttpRespo
     }
 }
 
-public struct AuthorizeDBSecurityGroupIngressOutputResponse: Swift.Equatable {
+public struct AuthorizeDBSecurityGroupIngressOutput: Swift.Equatable {
     /// Contains the details for an Amazon RDS DB security group. This data type is used as a response element in the DescribeDBSecurityGroups action.
     public var dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 
@@ -1137,11 +1124,11 @@ public struct AuthorizeDBSecurityGroupIngressOutputResponse: Swift.Equatable {
     }
 }
 
-struct AuthorizeDBSecurityGroupIngressOutputResponseBody: Swift.Equatable {
+struct AuthorizeDBSecurityGroupIngressOutputBody: Swift.Equatable {
     let dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 }
 
-extension AuthorizeDBSecurityGroupIngressOutputResponseBody: Swift.Decodable {
+extension AuthorizeDBSecurityGroupIngressOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSecurityGroup = "DBSecurityGroup"
     }
@@ -1151,6 +1138,19 @@ extension AuthorizeDBSecurityGroupIngressOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("AuthorizeDBSecurityGroupIngressResult"))
         let dbSecurityGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSecurityGroup.self, forKey: .dbSecurityGroup)
         dbSecurityGroup = dbSecurityGroupDecoded
+    }
+}
+
+enum AuthorizeDBSecurityGroupIngressOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "AuthorizationAlreadyExists": return try await AuthorizationAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "AuthorizationQuotaExceeded": return try await AuthorizationQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBSecurityGroupState": return try await InvalidDBSecurityGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -1373,22 +1373,11 @@ extension BacktrackDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum BacktrackDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension BacktrackDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension BacktrackDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: BacktrackDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: BacktrackDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.backtrackIdentifier = output.backtrackIdentifier
             self.backtrackRequestCreationTime = output.backtrackRequestCreationTime
             self.backtrackTo = output.backtrackTo
@@ -1407,7 +1396,7 @@ extension BacktrackDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// This data type is used as a response element in the DescribeDBClusterBacktracks action.
-public struct BacktrackDBClusterOutputResponse: Swift.Equatable {
+public struct BacktrackDBClusterOutput: Swift.Equatable {
     /// Contains the backtrack identifier.
     public var backtrackIdentifier: Swift.String?
     /// The timestamp of the time at which the backtrack was requested.
@@ -1447,7 +1436,7 @@ public struct BacktrackDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct BacktrackDBClusterOutputResponseBody: Swift.Equatable {
+struct BacktrackDBClusterOutputBody: Swift.Equatable {
     let dbClusterIdentifier: Swift.String?
     let backtrackIdentifier: Swift.String?
     let backtrackTo: ClientRuntime.Date?
@@ -1456,7 +1445,7 @@ struct BacktrackDBClusterOutputResponseBody: Swift.Equatable {
     let status: Swift.String?
 }
 
-extension BacktrackDBClusterOutputResponseBody: Swift.Decodable {
+extension BacktrackDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case backtrackIdentifier = "BacktrackIdentifier"
         case backtrackRequestCreationTime = "BacktrackRequestCreationTime"
@@ -1481,6 +1470,17 @@ extension BacktrackDBClusterOutputResponseBody: Swift.Decodable {
         backtrackRequestCreationTime = backtrackRequestCreationTimeDecoded
         let statusDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .status)
         status = statusDecoded
+    }
+}
+
+enum BacktrackDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -1972,22 +1972,11 @@ extension CancelExportTaskInputBody: Swift.Decodable {
     }
 }
 
-enum CancelExportTaskOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "ExportTaskNotFound": return try await ExportTaskNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidExportTaskStateFault": return try await InvalidExportTaskStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CancelExportTaskOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CancelExportTaskOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CancelExportTaskOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CancelExportTaskOutputBody = try responseDecoder.decode(responseBody: data)
             self.exportOnly = output.exportOnly
             self.exportTaskIdentifier = output.exportTaskIdentifier
             self.failureCause = output.failureCause
@@ -2026,7 +2015,7 @@ extension CancelExportTaskOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the details of a snapshot or cluster export to Amazon S3. This data type is used as a response element in the DescribeExportTasks action.
-public struct CancelExportTaskOutputResponse: Swift.Equatable {
+public struct CancelExportTaskOutput: Swift.Equatable {
     /// The data exported from the snapshot or cluster. Valid values are the following:
     ///
     /// * database - Export all the data from a specified database.
@@ -2118,7 +2107,7 @@ public struct CancelExportTaskOutputResponse: Swift.Equatable {
     }
 }
 
-struct CancelExportTaskOutputResponseBody: Swift.Equatable {
+struct CancelExportTaskOutputBody: Swift.Equatable {
     let exportTaskIdentifier: Swift.String?
     let sourceArn: Swift.String?
     let exportOnly: [Swift.String]?
@@ -2137,7 +2126,7 @@ struct CancelExportTaskOutputResponseBody: Swift.Equatable {
     let sourceType: RDSClientTypes.ExportSourceType?
 }
 
-extension CancelExportTaskOutputResponseBody: Swift.Decodable {
+extension CancelExportTaskOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case exportOnly = "ExportOnly"
         case exportTaskIdentifier = "ExportTaskIdentifier"
@@ -2209,6 +2198,17 @@ extension CancelExportTaskOutputResponseBody: Swift.Decodable {
         warningMessage = warningMessageDecoded
         let sourceTypeDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ExportSourceType.self, forKey: .sourceType)
         sourceType = sourceTypeDecoded
+    }
+}
+
+enum CancelExportTaskOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "ExportTaskNotFound": return try await ExportTaskNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidExportTaskStateFault": return try await InvalidExportTaskStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -3033,23 +3033,11 @@ extension CopyDBClusterParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CopyDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CopyDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CopyDBClusterParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CopyDBClusterParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CopyDBClusterParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterParameterGroup = output.dbClusterParameterGroup
         } else {
             self.dbClusterParameterGroup = nil
@@ -3057,7 +3045,7 @@ extension CopyDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseB
     }
 }
 
-public struct CopyDBClusterParameterGroupOutputResponse: Swift.Equatable {
+public struct CopyDBClusterParameterGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB cluster parameter group. This data type is used as a response element in the DescribeDBClusterParameterGroups action.
     public var dbClusterParameterGroup: RDSClientTypes.DBClusterParameterGroup?
 
@@ -3069,11 +3057,11 @@ public struct CopyDBClusterParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CopyDBClusterParameterGroupOutputResponseBody: Swift.Equatable {
+struct CopyDBClusterParameterGroupOutputBody: Swift.Equatable {
     let dbClusterParameterGroup: RDSClientTypes.DBClusterParameterGroup?
 }
 
-extension CopyDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
+extension CopyDBClusterParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterParameterGroup = "DBClusterParameterGroup"
     }
@@ -3083,6 +3071,18 @@ extension CopyDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBClusterParameterGroupResult"))
         let dbClusterParameterGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterParameterGroup.self, forKey: .dbClusterParameterGroup)
         dbClusterParameterGroup = dbClusterParameterGroupDecoded
+    }
+}
+
+enum CopyDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -3242,6 +3242,47 @@ extension CopyDBClusterSnapshotInputBody: Swift.Decodable {
     }
 }
 
+extension CopyDBClusterSnapshotOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CopyDBClusterSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbClusterSnapshot = output.dbClusterSnapshot
+        } else {
+            self.dbClusterSnapshot = nil
+        }
+    }
+}
+
+public struct CopyDBClusterSnapshotOutput: Swift.Equatable {
+    /// Contains the details for an Amazon RDS DB cluster snapshot This data type is used as a response element in the DescribeDBClusterSnapshots action.
+    public var dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
+
+    public init(
+        dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot? = nil
+    )
+    {
+        self.dbClusterSnapshot = dbClusterSnapshot
+    }
+}
+
+struct CopyDBClusterSnapshotOutputBody: Swift.Equatable {
+    let dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
+}
+
+extension CopyDBClusterSnapshotOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbClusterSnapshot = "DBClusterSnapshot"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBClusterSnapshotResult"))
+        let dbClusterSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshot.self, forKey: .dbClusterSnapshot)
+        dbClusterSnapshot = dbClusterSnapshotDecoded
+    }
+}
+
 enum CopyDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -3254,47 +3295,6 @@ enum CopyDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CopyDBClusterSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CopyDBClusterSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbClusterSnapshot = output.dbClusterSnapshot
-        } else {
-            self.dbClusterSnapshot = nil
-        }
-    }
-}
-
-public struct CopyDBClusterSnapshotOutputResponse: Swift.Equatable {
-    /// Contains the details for an Amazon RDS DB cluster snapshot This data type is used as a response element in the DescribeDBClusterSnapshots action.
-    public var dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
-
-    public init(
-        dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot? = nil
-    )
-    {
-        self.dbClusterSnapshot = dbClusterSnapshot
-    }
-}
-
-struct CopyDBClusterSnapshotOutputResponseBody: Swift.Equatable {
-    let dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
-}
-
-extension CopyDBClusterSnapshotOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbClusterSnapshot = "DBClusterSnapshot"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBClusterSnapshotResult"))
-        let dbClusterSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshot.self, forKey: .dbClusterSnapshot)
-        dbClusterSnapshot = dbClusterSnapshotDecoded
     }
 }
 
@@ -3419,23 +3419,11 @@ extension CopyDBParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CopyDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CopyDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CopyDBParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CopyDBParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CopyDBParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbParameterGroup = output.dbParameterGroup
         } else {
             self.dbParameterGroup = nil
@@ -3443,7 +3431,7 @@ extension CopyDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding 
     }
 }
 
-public struct CopyDBParameterGroupOutputResponse: Swift.Equatable {
+public struct CopyDBParameterGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB parameter group. This data type is used as a response element in the DescribeDBParameterGroups action.
     public var dbParameterGroup: RDSClientTypes.DBParameterGroup?
 
@@ -3455,11 +3443,11 @@ public struct CopyDBParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CopyDBParameterGroupOutputResponseBody: Swift.Equatable {
+struct CopyDBParameterGroupOutputBody: Swift.Equatable {
     let dbParameterGroup: RDSClientTypes.DBParameterGroup?
 }
 
-extension CopyDBParameterGroupOutputResponseBody: Swift.Decodable {
+extension CopyDBParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbParameterGroup = "DBParameterGroup"
     }
@@ -3469,6 +3457,18 @@ extension CopyDBParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBParameterGroupResult"))
         let dbParameterGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBParameterGroup.self, forKey: .dbParameterGroup)
         dbParameterGroup = dbParameterGroupDecoded
+    }
+}
+
+enum CopyDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -3659,6 +3659,47 @@ extension CopyDBSnapshotInputBody: Swift.Decodable {
     }
 }
 
+extension CopyDBSnapshotOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CopyDBSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbSnapshot = output.dbSnapshot
+        } else {
+            self.dbSnapshot = nil
+        }
+    }
+}
+
+public struct CopyDBSnapshotOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB snapshot. This data type is used as a response element in the DescribeDBSnapshots action.
+    public var dbSnapshot: RDSClientTypes.DBSnapshot?
+
+    public init(
+        dbSnapshot: RDSClientTypes.DBSnapshot? = nil
+    )
+    {
+        self.dbSnapshot = dbSnapshot
+    }
+}
+
+struct CopyDBSnapshotOutputBody: Swift.Equatable {
+    let dbSnapshot: RDSClientTypes.DBSnapshot?
+}
+
+extension CopyDBSnapshotOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbSnapshot = "DBSnapshot"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBSnapshotResult"))
+        let dbSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshot.self, forKey: .dbSnapshot)
+        dbSnapshot = dbSnapshotDecoded
+    }
+}
+
 enum CopyDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -3671,47 +3712,6 @@ enum CopyDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CopyDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CopyDBSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbSnapshot = output.dbSnapshot
-        } else {
-            self.dbSnapshot = nil
-        }
-    }
-}
-
-public struct CopyDBSnapshotOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB snapshot. This data type is used as a response element in the DescribeDBSnapshots action.
-    public var dbSnapshot: RDSClientTypes.DBSnapshot?
-
-    public init(
-        dbSnapshot: RDSClientTypes.DBSnapshot? = nil
-    )
-    {
-        self.dbSnapshot = dbSnapshot
-    }
-}
-
-struct CopyDBSnapshotOutputResponseBody: Swift.Equatable {
-    let dbSnapshot: RDSClientTypes.DBSnapshot?
-}
-
-extension CopyDBSnapshotOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbSnapshot = "DBSnapshot"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyDBSnapshotResult"))
-        let dbSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshot.self, forKey: .dbSnapshot)
-        dbSnapshot = dbSnapshotDecoded
     }
 }
 
@@ -3836,23 +3836,11 @@ extension CopyOptionGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CopyOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "OptionGroupAlreadyExistsFault": return try await OptionGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "OptionGroupQuotaExceededFault": return try await OptionGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CopyOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CopyOptionGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CopyOptionGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CopyOptionGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.optionGroup = output.optionGroup
         } else {
             self.optionGroup = nil
@@ -3860,7 +3848,7 @@ extension CopyOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CopyOptionGroupOutputResponse: Swift.Equatable {
+public struct CopyOptionGroupOutput: Swift.Equatable {
     ///
     public var optionGroup: RDSClientTypes.OptionGroup?
 
@@ -3872,11 +3860,11 @@ public struct CopyOptionGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CopyOptionGroupOutputResponseBody: Swift.Equatable {
+struct CopyOptionGroupOutputBody: Swift.Equatable {
     let optionGroup: RDSClientTypes.OptionGroup?
 }
 
-extension CopyOptionGroupOutputResponseBody: Swift.Decodable {
+extension CopyOptionGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case optionGroup = "OptionGroup"
     }
@@ -3886,6 +3874,18 @@ extension CopyOptionGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CopyOptionGroupResult"))
         let optionGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.OptionGroup.self, forKey: .optionGroup)
         optionGroup = optionGroupDecoded
+    }
+}
+
+enum CopyOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "OptionGroupAlreadyExistsFault": return try await OptionGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "OptionGroupQuotaExceededFault": return try await OptionGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -4019,6 +4019,47 @@ extension CreateBlueGreenDeploymentInputBody: Swift.Decodable {
     }
 }
 
+extension CreateBlueGreenDeploymentOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CreateBlueGreenDeploymentOutputBody = try responseDecoder.decode(responseBody: data)
+            self.blueGreenDeployment = output.blueGreenDeployment
+        } else {
+            self.blueGreenDeployment = nil
+        }
+    }
+}
+
+public struct CreateBlueGreenDeploymentOutput: Swift.Equatable {
+    /// Details about a blue/green deployment. For more information, see [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html) in the Amazon RDS User Guide and [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/blue-green-deployments.html) in the Amazon Aurora User Guide.
+    public var blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
+
+    public init(
+        blueGreenDeployment: RDSClientTypes.BlueGreenDeployment? = nil
+    )
+    {
+        self.blueGreenDeployment = blueGreenDeployment
+    }
+}
+
+struct CreateBlueGreenDeploymentOutputBody: Swift.Equatable {
+    let blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
+}
+
+extension CreateBlueGreenDeploymentOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case blueGreenDeployment = "BlueGreenDeployment"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateBlueGreenDeploymentResult"))
+        let blueGreenDeploymentDecoded = try containerValues.decodeIfPresent(RDSClientTypes.BlueGreenDeployment.self, forKey: .blueGreenDeployment)
+        blueGreenDeployment = blueGreenDeploymentDecoded
+    }
+}
+
 enum CreateBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -4036,47 +4077,6 @@ enum CreateBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBindin
             case "SourceDatabaseNotSupportedFault": return try await SourceDatabaseNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CreateBlueGreenDeploymentOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CreateBlueGreenDeploymentOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.blueGreenDeployment = output.blueGreenDeployment
-        } else {
-            self.blueGreenDeployment = nil
-        }
-    }
-}
-
-public struct CreateBlueGreenDeploymentOutputResponse: Swift.Equatable {
-    /// Details about a blue/green deployment. For more information, see [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html) in the Amazon RDS User Guide and [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/blue-green-deployments.html) in the Amazon Aurora User Guide.
-    public var blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
-
-    public init(
-        blueGreenDeployment: RDSClientTypes.BlueGreenDeployment? = nil
-    )
-    {
-        self.blueGreenDeployment = blueGreenDeployment
-    }
-}
-
-struct CreateBlueGreenDeploymentOutputResponseBody: Swift.Equatable {
-    let blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
-}
-
-extension CreateBlueGreenDeploymentOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case blueGreenDeployment = "BlueGreenDeployment"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateBlueGreenDeploymentResult"))
-        let blueGreenDeploymentDecoded = try containerValues.decodeIfPresent(RDSClientTypes.BlueGreenDeployment.self, forKey: .blueGreenDeployment)
-        blueGreenDeployment = blueGreenDeploymentDecoded
     }
 }
 
@@ -4317,25 +4317,11 @@ extension CreateCustomDBEngineVersionInputBody: Swift.Decodable {
     }
 }
 
-enum CreateCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "CreateCustomDBEngineVersionFault": return try await CreateCustomDBEngineVersionFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "CustomDBEngineVersionAlreadyExistsFault": return try await CustomDBEngineVersionAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "CustomDBEngineVersionQuotaExceededFault": return try await CustomDBEngineVersionQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "Ec2ImagePropertiesNotSupportedFault": return try await Ec2ImagePropertiesNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateCustomDBEngineVersionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateCustomDBEngineVersionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateCustomDBEngineVersionOutputBody = try responseDecoder.decode(responseBody: data)
             self.createTime = output.createTime
             self.customDBEngineVersionManifest = output.customDBEngineVersionManifest
             self.databaseInstallationFilesS3BucketName = output.databaseInstallationFilesS3BucketName
@@ -4406,7 +4392,7 @@ extension CreateCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// This data type is used as a response element in the action DescribeDBEngineVersions.
-public struct CreateCustomDBEngineVersionOutputResponse: Swift.Equatable {
+public struct CreateCustomDBEngineVersionOutput: Swift.Equatable {
     /// The creation time of the DB engine version.
     public var createTime: ClientRuntime.Date?
     /// JSON string that lists the installation files and parameters that RDS Custom uses to create a custom engine version (CEV). RDS Custom applies the patches in the order in which they're listed in the manifest. You can set the Oracle home, Oracle base, and UNIX/Linux user and group using the installation parameters. For more information, see [JSON fields in the CEV manifest](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/custom-cev.preparing.html#custom-cev.preparing.manifest.fields) in the Amazon RDS User Guide.
@@ -4542,7 +4528,7 @@ public struct CreateCustomDBEngineVersionOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
+struct CreateCustomDBEngineVersionOutputBody: Swift.Equatable {
     let engine: Swift.String?
     let engineVersion: Swift.String?
     let dbParameterGroupFamily: Swift.String?
@@ -4577,7 +4563,7 @@ struct CreateCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
     let supportsLocalWriteForwarding: Swift.Bool?
 }
 
-extension CreateCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
+extension CreateCustomDBEngineVersionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case createTime = "CreateTime"
         case customDBEngineVersionManifest = "CustomDBEngineVersionManifest"
@@ -4836,6 +4822,20 @@ extension CreateCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
     }
 }
 
+enum CreateCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "CreateCustomDBEngineVersionFault": return try await CreateCustomDBEngineVersionFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "CustomDBEngineVersionAlreadyExistsFault": return try await CustomDBEngineVersionAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "CustomDBEngineVersionQuotaExceededFault": return try await CustomDBEngineVersionQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "Ec2ImagePropertiesNotSupportedFault": return try await Ec2ImagePropertiesNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
+    }
+}
+
 extension CreateDBClusterEndpointInput: Swift.Encodable {
     public func encode(to encoder: Swift.Encoder) throws {
         var container = encoder.container(keyedBy: ClientRuntime.Key.self)
@@ -5017,26 +5017,11 @@ extension CreateDBClusterEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterEndpointAlreadyExistsFault": return try await DBClusterEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterEndpointQuotaExceededFault": return try await DBClusterEndpointQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBClusterEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBClusterEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBClusterEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.customEndpointType = output.customEndpointType
             self.dbClusterEndpointArn = output.dbClusterEndpointArn
             self.dbClusterEndpointIdentifier = output.dbClusterEndpointIdentifier
@@ -5074,7 +5059,7 @@ extension CreateDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBindi
 ///
 ///
 /// For the data structure that represents Amazon RDS DB instance endpoints, see Endpoint.
-public struct CreateDBClusterEndpointOutputResponse: Swift.Equatable {
+public struct CreateDBClusterEndpointOutput: Swift.Equatable {
     /// The type associated with a custom endpoint. One of: READER, WRITER, ANY.
     public var customEndpointType: Swift.String?
     /// The Amazon Resource Name (ARN) for the endpoint.
@@ -5122,7 +5107,7 @@ public struct CreateDBClusterEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBClusterEndpointOutputResponseBody: Swift.Equatable {
+struct CreateDBClusterEndpointOutputBody: Swift.Equatable {
     let dbClusterEndpointIdentifier: Swift.String?
     let dbClusterIdentifier: Swift.String?
     let dbClusterEndpointResourceIdentifier: Swift.String?
@@ -5135,7 +5120,7 @@ struct CreateDBClusterEndpointOutputResponseBody: Swift.Equatable {
     let dbClusterEndpointArn: Swift.String?
 }
 
-extension CreateDBClusterEndpointOutputResponseBody: Swift.Decodable {
+extension CreateDBClusterEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case customEndpointType = "CustomEndpointType"
         case dbClusterEndpointArn = "DBClusterEndpointArn"
@@ -5206,6 +5191,21 @@ extension CreateDBClusterEndpointOutputResponseBody: Swift.Decodable {
         }
         let dbClusterEndpointArnDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbClusterEndpointArn)
         dbClusterEndpointArn = dbClusterEndpointArnDecoded
+    }
+}
+
+enum CreateDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterEndpointAlreadyExistsFault": return try await DBClusterEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterEndpointQuotaExceededFault": return try await DBClusterEndpointQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -6037,6 +6037,47 @@ extension CreateDBClusterInputBody: Swift.Decodable {
     }
 }
 
+extension CreateDBClusterOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CreateDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct CreateDBClusterOutput: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct CreateDBClusterOutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension CreateDBClusterOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBClusterResult"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum CreateDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -6061,47 +6102,6 @@ enum CreateDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "StorageQuotaExceeded": return try await StorageQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CreateDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CreateDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct CreateDBClusterOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct CreateDBClusterOutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension CreateDBClusterOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBClusterResult"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -6226,22 +6226,11 @@ extension CreateDBClusterParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBClusterParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBClusterParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBClusterParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterParameterGroup = output.dbClusterParameterGroup
         } else {
             self.dbClusterParameterGroup = nil
@@ -6249,7 +6238,7 @@ extension CreateDBClusterParameterGroupOutputResponse: ClientRuntime.HttpRespons
     }
 }
 
-public struct CreateDBClusterParameterGroupOutputResponse: Swift.Equatable {
+public struct CreateDBClusterParameterGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB cluster parameter group. This data type is used as a response element in the DescribeDBClusterParameterGroups action.
     public var dbClusterParameterGroup: RDSClientTypes.DBClusterParameterGroup?
 
@@ -6261,11 +6250,11 @@ public struct CreateDBClusterParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBClusterParameterGroupOutputResponseBody: Swift.Equatable {
+struct CreateDBClusterParameterGroupOutputBody: Swift.Equatable {
     let dbClusterParameterGroup: RDSClientTypes.DBClusterParameterGroup?
 }
 
-extension CreateDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
+extension CreateDBClusterParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterParameterGroup = "DBClusterParameterGroup"
     }
@@ -6275,6 +6264,17 @@ extension CreateDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBClusterParameterGroupResult"))
         let dbClusterParameterGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterParameterGroup.self, forKey: .dbClusterParameterGroup)
         dbClusterParameterGroup = dbClusterParameterGroupDecoded
+    }
+}
+
+enum CreateDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -6388,25 +6388,11 @@ extension CreateDBClusterSnapshotInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterSnapshotAlreadyExistsFault": return try await DBClusterSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBClusterSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBClusterSnapshotOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBClusterSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBClusterSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterSnapshot = output.dbClusterSnapshot
         } else {
             self.dbClusterSnapshot = nil
@@ -6414,7 +6400,7 @@ extension CreateDBClusterSnapshotOutputResponse: ClientRuntime.HttpResponseBindi
     }
 }
 
-public struct CreateDBClusterSnapshotOutputResponse: Swift.Equatable {
+public struct CreateDBClusterSnapshotOutput: Swift.Equatable {
     /// Contains the details for an Amazon RDS DB cluster snapshot This data type is used as a response element in the DescribeDBClusterSnapshots action.
     public var dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
 
@@ -6426,11 +6412,11 @@ public struct CreateDBClusterSnapshotOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBClusterSnapshotOutputResponseBody: Swift.Equatable {
+struct CreateDBClusterSnapshotOutputBody: Swift.Equatable {
     let dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
 }
 
-extension CreateDBClusterSnapshotOutputResponseBody: Swift.Decodable {
+extension CreateDBClusterSnapshotOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterSnapshot = "DBClusterSnapshot"
     }
@@ -6440,6 +6426,20 @@ extension CreateDBClusterSnapshotOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBClusterSnapshotResult"))
         let dbClusterSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshot.self, forKey: .dbClusterSnapshot)
         dbClusterSnapshot = dbClusterSnapshotDecoded
+    }
+}
+
+enum CreateDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterSnapshotAlreadyExistsFault": return try await DBClusterSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -7655,6 +7655,47 @@ extension CreateDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension CreateDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CreateDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct CreateDBInstanceOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct CreateDBInstanceOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension CreateDBInstanceOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBInstanceResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum CreateDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -7682,47 +7723,6 @@ enum CreateDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CreateDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CreateDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct CreateDBInstanceOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct CreateDBInstanceOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension CreateDBInstanceOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBInstanceResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -8459,6 +8459,47 @@ extension CreateDBInstanceReadReplicaInputBody: Swift.Decodable {
     }
 }
 
+extension CreateDBInstanceReadReplicaOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CreateDBInstanceReadReplicaOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct CreateDBInstanceReadReplicaOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct CreateDBInstanceReadReplicaOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension CreateDBInstanceReadReplicaOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBInstanceReadReplicaResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum CreateDBInstanceReadReplicaOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -8487,47 +8528,6 @@ enum CreateDBInstanceReadReplicaOutputError: ClientRuntime.HttpResponseErrorBind
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CreateDBInstanceReadReplicaOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CreateDBInstanceReadReplicaOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct CreateDBInstanceReadReplicaOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct CreateDBInstanceReadReplicaOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension CreateDBInstanceReadReplicaOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBInstanceReadReplicaResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -8674,22 +8674,11 @@ extension CreateDBParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbParameterGroup = output.dbParameterGroup
         } else {
             self.dbParameterGroup = nil
@@ -8697,7 +8686,7 @@ extension CreateDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBindin
     }
 }
 
-public struct CreateDBParameterGroupOutputResponse: Swift.Equatable {
+public struct CreateDBParameterGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB parameter group. This data type is used as a response element in the DescribeDBParameterGroups action.
     public var dbParameterGroup: RDSClientTypes.DBParameterGroup?
 
@@ -8709,11 +8698,11 @@ public struct CreateDBParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBParameterGroupOutputResponseBody: Swift.Equatable {
+struct CreateDBParameterGroupOutputBody: Swift.Equatable {
     let dbParameterGroup: RDSClientTypes.DBParameterGroup?
 }
 
-extension CreateDBParameterGroupOutputResponseBody: Swift.Decodable {
+extension CreateDBParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbParameterGroup = "DBParameterGroup"
     }
@@ -8723,6 +8712,17 @@ extension CreateDBParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBParameterGroupResult"))
         let dbParameterGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBParameterGroup.self, forKey: .dbParameterGroup)
         dbParameterGroup = dbParameterGroupDecoded
+    }
+}
+
+enum CreateDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupAlreadyExists": return try await DBParameterGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBParameterGroupQuotaExceeded": return try await DBParameterGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -8907,25 +8907,11 @@ extension CreateDBProxyEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyEndpointAlreadyExistsFault": return try await DBProxyEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyEndpointQuotaExceededFault": return try await DBProxyEndpointQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBProxyEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBProxyEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBProxyEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyEndpoint = output.dbProxyEndpoint
         } else {
             self.dbProxyEndpoint = nil
@@ -8933,7 +8919,7 @@ extension CreateDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct CreateDBProxyEndpointOutputResponse: Swift.Equatable {
+public struct CreateDBProxyEndpointOutput: Swift.Equatable {
     /// The DBProxyEndpoint object that is created by the API operation. The DB proxy endpoint that you create might provide capabilities such as read/write or read-only operations, or using a different VPC than the proxy's default VPC.
     public var dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 
@@ -8945,11 +8931,11 @@ public struct CreateDBProxyEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBProxyEndpointOutputResponseBody: Swift.Equatable {
+struct CreateDBProxyEndpointOutputBody: Swift.Equatable {
     let dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 }
 
-extension CreateDBProxyEndpointOutputResponseBody: Swift.Decodable {
+extension CreateDBProxyEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyEndpoint = "DBProxyEndpoint"
     }
@@ -8959,6 +8945,20 @@ extension CreateDBProxyEndpointOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBProxyEndpointResult"))
         let dbProxyEndpointDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxyEndpoint.self, forKey: .dbProxyEndpoint)
         dbProxyEndpoint = dbProxyEndpointDecoded
+    }
+}
+
+enum CreateDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyEndpointAlreadyExistsFault": return try await DBProxyEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyEndpointQuotaExceededFault": return try await DBProxyEndpointQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -9215,23 +9215,11 @@ extension CreateDBProxyInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyAlreadyExistsFault": return try await DBProxyAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyQuotaExceededFault": return try await DBProxyQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBProxyOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBProxyOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBProxyOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxy = output.dbProxy
         } else {
             self.dbProxy = nil
@@ -9239,7 +9227,7 @@ extension CreateDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CreateDBProxyOutputResponse: Swift.Equatable {
+public struct CreateDBProxyOutput: Swift.Equatable {
     /// The DBProxy structure corresponding to the new proxy.
     public var dbProxy: RDSClientTypes.DBProxy?
 
@@ -9251,11 +9239,11 @@ public struct CreateDBProxyOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBProxyOutputResponseBody: Swift.Equatable {
+struct CreateDBProxyOutputBody: Swift.Equatable {
     let dbProxy: RDSClientTypes.DBProxy?
 }
 
-extension CreateDBProxyOutputResponseBody: Swift.Decodable {
+extension CreateDBProxyOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxy = "DBProxy"
     }
@@ -9265,6 +9253,18 @@ extension CreateDBProxyOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBProxyResult"))
         let dbProxyDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxy.self, forKey: .dbProxy)
         dbProxy = dbProxyDecoded
+    }
+}
+
+enum CreateDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyAlreadyExistsFault": return try await DBProxyAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyQuotaExceededFault": return try await DBProxyQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -9375,23 +9375,11 @@ extension CreateDBSecurityGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBSecurityGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSecurityGroupAlreadyExists": return try await DBSecurityGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSecurityGroupNotSupported": return try await DBSecurityGroupNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "QuotaExceeded.DBSecurityGroup": return try await DBSecurityGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBSecurityGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBSecurityGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBSecurityGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBSecurityGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSecurityGroup = output.dbSecurityGroup
         } else {
             self.dbSecurityGroup = nil
@@ -9399,7 +9387,7 @@ extension CreateDBSecurityGroupOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct CreateDBSecurityGroupOutputResponse: Swift.Equatable {
+public struct CreateDBSecurityGroupOutput: Swift.Equatable {
     /// Contains the details for an Amazon RDS DB security group. This data type is used as a response element in the DescribeDBSecurityGroups action.
     public var dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 
@@ -9411,11 +9399,11 @@ public struct CreateDBSecurityGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBSecurityGroupOutputResponseBody: Swift.Equatable {
+struct CreateDBSecurityGroupOutputBody: Swift.Equatable {
     let dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 }
 
-extension CreateDBSecurityGroupOutputResponseBody: Swift.Decodable {
+extension CreateDBSecurityGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSecurityGroup = "DBSecurityGroup"
     }
@@ -9425,6 +9413,18 @@ extension CreateDBSecurityGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBSecurityGroupResult"))
         let dbSecurityGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSecurityGroup.self, forKey: .dbSecurityGroup)
         dbSecurityGroup = dbSecurityGroupDecoded
+    }
+}
+
+enum CreateDBSecurityGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSecurityGroupAlreadyExists": return try await DBSecurityGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSecurityGroupNotSupported": return try await DBSecurityGroupNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "QuotaExceeded.DBSecurityGroup": return try await DBSecurityGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -9537,24 +9537,11 @@ extension CreateDBSnapshotInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSnapshotAlreadyExists": return try await DBSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBSnapshotOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshot = output.dbSnapshot
         } else {
             self.dbSnapshot = nil
@@ -9562,7 +9549,7 @@ extension CreateDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CreateDBSnapshotOutputResponse: Swift.Equatable {
+public struct CreateDBSnapshotOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB snapshot. This data type is used as a response element in the DescribeDBSnapshots action.
     public var dbSnapshot: RDSClientTypes.DBSnapshot?
 
@@ -9574,11 +9561,11 @@ public struct CreateDBSnapshotOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBSnapshotOutputResponseBody: Swift.Equatable {
+struct CreateDBSnapshotOutputBody: Swift.Equatable {
     let dbSnapshot: RDSClientTypes.DBSnapshot?
 }
 
-extension CreateDBSnapshotOutputResponseBody: Swift.Decodable {
+extension CreateDBSnapshotOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshot = "DBSnapshot"
     }
@@ -9588,6 +9575,19 @@ extension CreateDBSnapshotOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBSnapshotResult"))
         let dbSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshot.self, forKey: .dbSnapshot)
         dbSnapshot = dbSnapshotDecoded
+    }
+}
+
+enum CreateDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSnapshotAlreadyExists": return try await DBSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -9734,25 +9734,11 @@ extension CreateDBSubnetGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CreateDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSubnetGroupAlreadyExists": return try await DBSubnetGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSubnetGroupDoesNotCoverEnoughAZs": return try await DBSubnetGroupDoesNotCoverEnoughAZs(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSubnetGroupQuotaExceeded": return try await DBSubnetGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSubnetQuotaExceededFault": return try await DBSubnetQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateDBSubnetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateDBSubnetGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateDBSubnetGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateDBSubnetGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSubnetGroup = output.dbSubnetGroup
         } else {
             self.dbSubnetGroup = nil
@@ -9760,7 +9746,7 @@ extension CreateDBSubnetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CreateDBSubnetGroupOutputResponse: Swift.Equatable {
+public struct CreateDBSubnetGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB subnet group. This data type is used as a response element in the DescribeDBSubnetGroups action.
     public var dbSubnetGroup: RDSClientTypes.DBSubnetGroup?
 
@@ -9772,11 +9758,11 @@ public struct CreateDBSubnetGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateDBSubnetGroupOutputResponseBody: Swift.Equatable {
+struct CreateDBSubnetGroupOutputBody: Swift.Equatable {
     let dbSubnetGroup: RDSClientTypes.DBSubnetGroup?
 }
 
-extension CreateDBSubnetGroupOutputResponseBody: Swift.Decodable {
+extension CreateDBSubnetGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSubnetGroup = "DBSubnetGroup"
     }
@@ -9786,6 +9772,20 @@ extension CreateDBSubnetGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateDBSubnetGroupResult"))
         let dbSubnetGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSubnetGroup.self, forKey: .dbSubnetGroup)
         dbSubnetGroup = dbSubnetGroupDecoded
+    }
+}
+
+enum CreateDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSubnetGroupAlreadyExists": return try await DBSubnetGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSubnetGroupDoesNotCoverEnoughAZs": return try await DBSubnetGroupDoesNotCoverEnoughAZs(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSubnetGroupQuotaExceeded": return try await DBSubnetGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSubnetQuotaExceededFault": return try await DBSubnetQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -9997,6 +9997,47 @@ extension CreateEventSubscriptionInputBody: Swift.Decodable {
     }
 }
 
+extension CreateEventSubscriptionOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: CreateEventSubscriptionOutputBody = try responseDecoder.decode(responseBody: data)
+            self.eventSubscription = output.eventSubscription
+        } else {
+            self.eventSubscription = nil
+        }
+    }
+}
+
+public struct CreateEventSubscriptionOutput: Swift.Equatable {
+    /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
+    public var eventSubscription: RDSClientTypes.EventSubscription?
+
+    public init(
+        eventSubscription: RDSClientTypes.EventSubscription? = nil
+    )
+    {
+        self.eventSubscription = eventSubscription
+    }
+}
+
+struct CreateEventSubscriptionOutputBody: Swift.Equatable {
+    let eventSubscription: RDSClientTypes.EventSubscription?
+}
+
+extension CreateEventSubscriptionOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case eventSubscription = "EventSubscription"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateEventSubscriptionResult"))
+        let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
+        eventSubscription = eventSubscriptionDecoded
+    }
+}
+
 enum CreateEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -10010,47 +10051,6 @@ enum CreateEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding 
             case "SubscriptionCategoryNotFound": return try await SubscriptionCategoryNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension CreateEventSubscriptionOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: CreateEventSubscriptionOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.eventSubscription = output.eventSubscription
-        } else {
-            self.eventSubscription = nil
-        }
-    }
-}
-
-public struct CreateEventSubscriptionOutputResponse: Swift.Equatable {
-    /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
-    public var eventSubscription: RDSClientTypes.EventSubscription?
-
-    public init(
-        eventSubscription: RDSClientTypes.EventSubscription? = nil
-    )
-    {
-        self.eventSubscription = eventSubscription
-    }
-}
-
-struct CreateEventSubscriptionOutputResponseBody: Swift.Equatable {
-    let eventSubscription: RDSClientTypes.EventSubscription?
-}
-
-extension CreateEventSubscriptionOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case eventSubscription = "EventSubscription"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateEventSubscriptionResult"))
-        let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
-        eventSubscription = eventSubscriptionDecoded
     }
 }
 
@@ -10181,24 +10181,11 @@ extension CreateGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum CreateGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "GlobalClusterAlreadyExistsFault": return try await GlobalClusterAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "GlobalClusterQuotaExceededFault": return try await GlobalClusterQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -10206,7 +10193,7 @@ extension CreateGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CreateGlobalClusterOutputResponse: Swift.Equatable {
+public struct CreateGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -10218,11 +10205,11 @@ public struct CreateGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateGlobalClusterOutputResponseBody: Swift.Equatable {
+struct CreateGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension CreateGlobalClusterOutputResponseBody: Swift.Decodable {
+extension CreateGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -10232,6 +10219,19 @@ extension CreateGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum CreateGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "GlobalClusterAlreadyExistsFault": return try await GlobalClusterAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "GlobalClusterQuotaExceededFault": return try await GlobalClusterQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -10386,22 +10386,11 @@ extension CreateOptionGroupInputBody: Swift.Decodable {
     }
 }
 
-enum CreateOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "OptionGroupAlreadyExistsFault": return try await OptionGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "OptionGroupQuotaExceededFault": return try await OptionGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension CreateOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension CreateOptionGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: CreateOptionGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: CreateOptionGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.optionGroup = output.optionGroup
         } else {
             self.optionGroup = nil
@@ -10409,7 +10398,7 @@ extension CreateOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct CreateOptionGroupOutputResponse: Swift.Equatable {
+public struct CreateOptionGroupOutput: Swift.Equatable {
     ///
     public var optionGroup: RDSClientTypes.OptionGroup?
 
@@ -10421,11 +10410,11 @@ public struct CreateOptionGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct CreateOptionGroupOutputResponseBody: Swift.Equatable {
+struct CreateOptionGroupOutputBody: Swift.Equatable {
     let optionGroup: RDSClientTypes.OptionGroup?
 }
 
-extension CreateOptionGroupOutputResponseBody: Swift.Decodable {
+extension CreateOptionGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case optionGroup = "OptionGroup"
     }
@@ -10435,6 +10424,17 @@ extension CreateOptionGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("CreateOptionGroupResult"))
         let optionGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.OptionGroup.self, forKey: .optionGroup)
         optionGroup = optionGroupDecoded
+    }
+}
+
+enum CreateOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "OptionGroupAlreadyExistsFault": return try await OptionGroupAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "OptionGroupQuotaExceededFault": return try await OptionGroupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -19806,22 +19806,11 @@ extension DeleteBlueGreenDeploymentInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidBlueGreenDeploymentStateFault": return try await InvalidBlueGreenDeploymentStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteBlueGreenDeploymentOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteBlueGreenDeploymentOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteBlueGreenDeploymentOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteBlueGreenDeploymentOutputBody = try responseDecoder.decode(responseBody: data)
             self.blueGreenDeployment = output.blueGreenDeployment
         } else {
             self.blueGreenDeployment = nil
@@ -19829,7 +19818,7 @@ extension DeleteBlueGreenDeploymentOutputResponse: ClientRuntime.HttpResponseBin
     }
 }
 
-public struct DeleteBlueGreenDeploymentOutputResponse: Swift.Equatable {
+public struct DeleteBlueGreenDeploymentOutput: Swift.Equatable {
     /// Details about a blue/green deployment. For more information, see [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html) in the Amazon RDS User Guide and [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/blue-green-deployments.html) in the Amazon Aurora User Guide.
     public var blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
 
@@ -19841,11 +19830,11 @@ public struct DeleteBlueGreenDeploymentOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteBlueGreenDeploymentOutputResponseBody: Swift.Equatable {
+struct DeleteBlueGreenDeploymentOutputBody: Swift.Equatable {
     let blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
 }
 
-extension DeleteBlueGreenDeploymentOutputResponseBody: Swift.Decodable {
+extension DeleteBlueGreenDeploymentOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case blueGreenDeployment = "BlueGreenDeployment"
     }
@@ -19855,6 +19844,17 @@ extension DeleteBlueGreenDeploymentOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteBlueGreenDeploymentResult"))
         let blueGreenDeploymentDecoded = try containerValues.decodeIfPresent(RDSClientTypes.BlueGreenDeployment.self, forKey: .blueGreenDeployment)
         blueGreenDeployment = blueGreenDeploymentDecoded
+    }
+}
+
+enum DeleteBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidBlueGreenDeploymentStateFault": return try await InvalidBlueGreenDeploymentStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -19916,22 +19916,11 @@ extension DeleteCustomDBEngineVersionInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "CustomDBEngineVersionNotFoundFault": return try await CustomDBEngineVersionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidCustomDBEngineVersionStateFault": return try await InvalidCustomDBEngineVersionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteCustomDBEngineVersionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteCustomDBEngineVersionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteCustomDBEngineVersionOutputBody = try responseDecoder.decode(responseBody: data)
             self.createTime = output.createTime
             self.customDBEngineVersionManifest = output.customDBEngineVersionManifest
             self.databaseInstallationFilesS3BucketName = output.databaseInstallationFilesS3BucketName
@@ -20002,7 +19991,7 @@ extension DeleteCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// This data type is used as a response element in the action DescribeDBEngineVersions.
-public struct DeleteCustomDBEngineVersionOutputResponse: Swift.Equatable {
+public struct DeleteCustomDBEngineVersionOutput: Swift.Equatable {
     /// The creation time of the DB engine version.
     public var createTime: ClientRuntime.Date?
     /// JSON string that lists the installation files and parameters that RDS Custom uses to create a custom engine version (CEV). RDS Custom applies the patches in the order in which they're listed in the manifest. You can set the Oracle home, Oracle base, and UNIX/Linux user and group using the installation parameters. For more information, see [JSON fields in the CEV manifest](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/custom-cev.preparing.html#custom-cev.preparing.manifest.fields) in the Amazon RDS User Guide.
@@ -20138,7 +20127,7 @@ public struct DeleteCustomDBEngineVersionOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
+struct DeleteCustomDBEngineVersionOutputBody: Swift.Equatable {
     let engine: Swift.String?
     let engineVersion: Swift.String?
     let dbParameterGroupFamily: Swift.String?
@@ -20173,7 +20162,7 @@ struct DeleteCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
     let supportsLocalWriteForwarding: Swift.Bool?
 }
 
-extension DeleteCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
+extension DeleteCustomDBEngineVersionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case createTime = "CreateTime"
         case customDBEngineVersionManifest = "CustomDBEngineVersionManifest"
@@ -20432,6 +20421,17 @@ extension DeleteCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
     }
 }
 
+enum DeleteCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "CustomDBEngineVersionNotFoundFault": return try await CustomDBEngineVersionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidCustomDBEngineVersionStateFault": return try await InvalidCustomDBEngineVersionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
+    }
+}
+
 extension DeleteDBClusterAutomatedBackupInput: Swift.Encodable {
     public func encode(to encoder: Swift.Encoder) throws {
         var container = encoder.container(keyedBy: ClientRuntime.Key.self)
@@ -20478,22 +20478,11 @@ extension DeleteDBClusterAutomatedBackupInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBClusterAutomatedBackupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterAutomatedBackupNotFoundFault": return try await DBClusterAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterAutomatedBackupStateFault": return try await InvalidDBClusterAutomatedBackupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBClusterAutomatedBackupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBClusterAutomatedBackupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBClusterAutomatedBackupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBClusterAutomatedBackupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterAutomatedBackup = output.dbClusterAutomatedBackup
         } else {
             self.dbClusterAutomatedBackup = nil
@@ -20501,7 +20490,7 @@ extension DeleteDBClusterAutomatedBackupOutputResponse: ClientRuntime.HttpRespon
     }
 }
 
-public struct DeleteDBClusterAutomatedBackupOutputResponse: Swift.Equatable {
+public struct DeleteDBClusterAutomatedBackupOutput: Swift.Equatable {
     /// An automated backup of a DB cluster. It consists of system backups, transaction logs, and the database cluster properties that existed at the time you deleted the source cluster.
     public var dbClusterAutomatedBackup: RDSClientTypes.DBClusterAutomatedBackup?
 
@@ -20513,11 +20502,11 @@ public struct DeleteDBClusterAutomatedBackupOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBClusterAutomatedBackupOutputResponseBody: Swift.Equatable {
+struct DeleteDBClusterAutomatedBackupOutputBody: Swift.Equatable {
     let dbClusterAutomatedBackup: RDSClientTypes.DBClusterAutomatedBackup?
 }
 
-extension DeleteDBClusterAutomatedBackupOutputResponseBody: Swift.Decodable {
+extension DeleteDBClusterAutomatedBackupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterAutomatedBackup = "DBClusterAutomatedBackup"
     }
@@ -20527,6 +20516,17 @@ extension DeleteDBClusterAutomatedBackupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBClusterAutomatedBackupResult"))
         let dbClusterAutomatedBackupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterAutomatedBackup.self, forKey: .dbClusterAutomatedBackup)
         dbClusterAutomatedBackup = dbClusterAutomatedBackupDecoded
+    }
+}
+
+enum DeleteDBClusterAutomatedBackupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterAutomatedBackupNotFoundFault": return try await DBClusterAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterAutomatedBackupStateFault": return try await InvalidDBClusterAutomatedBackupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -20576,23 +20576,11 @@ extension DeleteDBClusterEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterEndpointNotFoundFault": return try await DBClusterEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterEndpointStateFault": return try await InvalidDBClusterEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBClusterEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBClusterEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBClusterEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.customEndpointType = output.customEndpointType
             self.dbClusterEndpointArn = output.dbClusterEndpointArn
             self.dbClusterEndpointIdentifier = output.dbClusterEndpointIdentifier
@@ -20630,7 +20618,7 @@ extension DeleteDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBindi
 ///
 ///
 /// For the data structure that represents Amazon RDS DB instance endpoints, see Endpoint.
-public struct DeleteDBClusterEndpointOutputResponse: Swift.Equatable {
+public struct DeleteDBClusterEndpointOutput: Swift.Equatable {
     /// The type associated with a custom endpoint. One of: READER, WRITER, ANY.
     public var customEndpointType: Swift.String?
     /// The Amazon Resource Name (ARN) for the endpoint.
@@ -20678,7 +20666,7 @@ public struct DeleteDBClusterEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBClusterEndpointOutputResponseBody: Swift.Equatable {
+struct DeleteDBClusterEndpointOutputBody: Swift.Equatable {
     let dbClusterEndpointIdentifier: Swift.String?
     let dbClusterIdentifier: Swift.String?
     let dbClusterEndpointResourceIdentifier: Swift.String?
@@ -20691,7 +20679,7 @@ struct DeleteDBClusterEndpointOutputResponseBody: Swift.Equatable {
     let dbClusterEndpointArn: Swift.String?
 }
 
-extension DeleteDBClusterEndpointOutputResponseBody: Swift.Decodable {
+extension DeleteDBClusterEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case customEndpointType = "CustomEndpointType"
         case dbClusterEndpointArn = "DBClusterEndpointArn"
@@ -20762,6 +20750,18 @@ extension DeleteDBClusterEndpointOutputResponseBody: Swift.Decodable {
         }
         let dbClusterEndpointArnDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbClusterEndpointArn)
         dbClusterEndpointArn = dbClusterEndpointArnDecoded
+    }
+}
+
+enum DeleteDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterEndpointNotFoundFault": return try await DBClusterEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterEndpointStateFault": return try await InvalidDBClusterEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -20853,6 +20853,47 @@ extension DeleteDBClusterInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBClusterOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: DeleteDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct DeleteDBClusterOutput: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct DeleteDBClusterOutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension DeleteDBClusterOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBClusterResult"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum DeleteDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -20865,47 +20906,6 @@ enum DeleteDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension DeleteDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: DeleteDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct DeleteDBClusterOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct DeleteDBClusterOutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension DeleteDBClusterOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBClusterResult"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -20962,6 +20962,16 @@ extension DeleteDBClusterParameterGroupInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBClusterParameterGroupOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeleteDBClusterParameterGroupOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeleteDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -20971,16 +20981,6 @@ enum DeleteDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBi
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeleteDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeleteDBClusterParameterGroupOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DeleteDBClusterSnapshotInput: Swift.Encodable {
@@ -21030,22 +21030,11 @@ extension DeleteDBClusterSnapshotInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBClusterSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBClusterSnapshotOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBClusterSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBClusterSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterSnapshot = output.dbClusterSnapshot
         } else {
             self.dbClusterSnapshot = nil
@@ -21053,7 +21042,7 @@ extension DeleteDBClusterSnapshotOutputResponse: ClientRuntime.HttpResponseBindi
     }
 }
 
-public struct DeleteDBClusterSnapshotOutputResponse: Swift.Equatable {
+public struct DeleteDBClusterSnapshotOutput: Swift.Equatable {
     /// Contains the details for an Amazon RDS DB cluster snapshot This data type is used as a response element in the DescribeDBClusterSnapshots action.
     public var dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
 
@@ -21065,11 +21054,11 @@ public struct DeleteDBClusterSnapshotOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBClusterSnapshotOutputResponseBody: Swift.Equatable {
+struct DeleteDBClusterSnapshotOutputBody: Swift.Equatable {
     let dbClusterSnapshot: RDSClientTypes.DBClusterSnapshot?
 }
 
-extension DeleteDBClusterSnapshotOutputResponseBody: Swift.Decodable {
+extension DeleteDBClusterSnapshotOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterSnapshot = "DBClusterSnapshot"
     }
@@ -21079,6 +21068,17 @@ extension DeleteDBClusterSnapshotOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBClusterSnapshotResult"))
         let dbClusterSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshot.self, forKey: .dbClusterSnapshot)
         dbClusterSnapshot = dbClusterSnapshotDecoded
+    }
+}
+
+enum DeleteDBClusterSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21139,22 +21139,11 @@ extension DeleteDBInstanceAutomatedBackupInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBInstanceAutomatedBackupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceAutomatedBackupNotFound": return try await DBInstanceAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceAutomatedBackupState": return try await InvalidDBInstanceAutomatedBackupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBInstanceAutomatedBackupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBInstanceAutomatedBackupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBInstanceAutomatedBackupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBInstanceAutomatedBackupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstanceAutomatedBackup = output.dbInstanceAutomatedBackup
         } else {
             self.dbInstanceAutomatedBackup = nil
@@ -21162,7 +21151,7 @@ extension DeleteDBInstanceAutomatedBackupOutputResponse: ClientRuntime.HttpRespo
     }
 }
 
-public struct DeleteDBInstanceAutomatedBackupOutputResponse: Swift.Equatable {
+public struct DeleteDBInstanceAutomatedBackupOutput: Swift.Equatable {
     /// An automated backup of a DB instance. It consists of system backups, transaction logs, and the database instance properties that existed at the time you deleted the source instance.
     public var dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 
@@ -21174,11 +21163,11 @@ public struct DeleteDBInstanceAutomatedBackupOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBInstanceAutomatedBackupOutputResponseBody: Swift.Equatable {
+struct DeleteDBInstanceAutomatedBackupOutputBody: Swift.Equatable {
     let dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 }
 
-extension DeleteDBInstanceAutomatedBackupOutputResponseBody: Swift.Decodable {
+extension DeleteDBInstanceAutomatedBackupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstanceAutomatedBackup = "DBInstanceAutomatedBackup"
     }
@@ -21188,6 +21177,17 @@ extension DeleteDBInstanceAutomatedBackupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBInstanceAutomatedBackupResult"))
         let dbInstanceAutomatedBackupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstanceAutomatedBackup.self, forKey: .dbInstanceAutomatedBackup)
         dbInstanceAutomatedBackup = dbInstanceAutomatedBackupDecoded
+    }
+}
+
+enum DeleteDBInstanceAutomatedBackupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceAutomatedBackupNotFound": return try await DBInstanceAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceAutomatedBackupState": return try await InvalidDBInstanceAutomatedBackupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21281,6 +21281,47 @@ extension DeleteDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: DeleteDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct DeleteDBInstanceOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct DeleteDBInstanceOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension DeleteDBInstanceOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBInstanceResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum DeleteDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -21293,47 +21334,6 @@ enum DeleteDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension DeleteDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: DeleteDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct DeleteDBInstanceOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct DeleteDBInstanceOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension DeleteDBInstanceOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBInstanceResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -21390,6 +21390,16 @@ extension DeleteDBParameterGroupInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBParameterGroupOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeleteDBParameterGroupOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeleteDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -21399,16 +21409,6 @@ enum DeleteDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeleteDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeleteDBParameterGroupOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DeleteDBProxyEndpointInput: Swift.Encodable {
@@ -21457,22 +21457,11 @@ extension DeleteDBProxyEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyEndpointStateFault": return try await InvalidDBProxyEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBProxyEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBProxyEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBProxyEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyEndpoint = output.dbProxyEndpoint
         } else {
             self.dbProxyEndpoint = nil
@@ -21480,7 +21469,7 @@ extension DeleteDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct DeleteDBProxyEndpointOutputResponse: Swift.Equatable {
+public struct DeleteDBProxyEndpointOutput: Swift.Equatable {
     /// The data structure representing the details of the DB proxy endpoint that you delete.
     public var dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 
@@ -21492,11 +21481,11 @@ public struct DeleteDBProxyEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBProxyEndpointOutputResponseBody: Swift.Equatable {
+struct DeleteDBProxyEndpointOutputBody: Swift.Equatable {
     let dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 }
 
-extension DeleteDBProxyEndpointOutputResponseBody: Swift.Decodable {
+extension DeleteDBProxyEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyEndpoint = "DBProxyEndpoint"
     }
@@ -21506,6 +21495,17 @@ extension DeleteDBProxyEndpointOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBProxyEndpointResult"))
         let dbProxyEndpointDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxyEndpoint.self, forKey: .dbProxyEndpoint)
         dbProxyEndpoint = dbProxyEndpointDecoded
+    }
+}
+
+enum DeleteDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyEndpointStateFault": return try await InvalidDBProxyEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21555,22 +21555,11 @@ extension DeleteDBProxyInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBProxyOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBProxyOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBProxyOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxy = output.dbProxy
         } else {
             self.dbProxy = nil
@@ -21578,7 +21567,7 @@ extension DeleteDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct DeleteDBProxyOutputResponse: Swift.Equatable {
+public struct DeleteDBProxyOutput: Swift.Equatable {
     /// The data structure representing the details of the DB proxy that you delete.
     public var dbProxy: RDSClientTypes.DBProxy?
 
@@ -21590,11 +21579,11 @@ public struct DeleteDBProxyOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBProxyOutputResponseBody: Swift.Equatable {
+struct DeleteDBProxyOutputBody: Swift.Equatable {
     let dbProxy: RDSClientTypes.DBProxy?
 }
 
-extension DeleteDBProxyOutputResponseBody: Swift.Decodable {
+extension DeleteDBProxyOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxy = "DBProxy"
     }
@@ -21604,6 +21593,17 @@ extension DeleteDBProxyOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBProxyResult"))
         let dbProxyDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxy.self, forKey: .dbProxy)
         dbProxy = dbProxyDecoded
+    }
+}
+
+enum DeleteDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21662,6 +21662,16 @@ extension DeleteDBSecurityGroupInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBSecurityGroupOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeleteDBSecurityGroupOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeleteDBSecurityGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -21671,16 +21681,6 @@ enum DeleteDBSecurityGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeleteDBSecurityGroupOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeleteDBSecurityGroupOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DeleteDBSnapshotInput: Swift.Encodable {
@@ -21730,22 +21730,11 @@ extension DeleteDBSnapshotInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBSnapshotState": return try await InvalidDBSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteDBSnapshotOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteDBSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteDBSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshot = output.dbSnapshot
         } else {
             self.dbSnapshot = nil
@@ -21753,7 +21742,7 @@ extension DeleteDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct DeleteDBSnapshotOutputResponse: Swift.Equatable {
+public struct DeleteDBSnapshotOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB snapshot. This data type is used as a response element in the DescribeDBSnapshots action.
     public var dbSnapshot: RDSClientTypes.DBSnapshot?
 
@@ -21765,11 +21754,11 @@ public struct DeleteDBSnapshotOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteDBSnapshotOutputResponseBody: Swift.Equatable {
+struct DeleteDBSnapshotOutputBody: Swift.Equatable {
     let dbSnapshot: RDSClientTypes.DBSnapshot?
 }
 
-extension DeleteDBSnapshotOutputResponseBody: Swift.Decodable {
+extension DeleteDBSnapshotOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshot = "DBSnapshot"
     }
@@ -21779,6 +21768,17 @@ extension DeleteDBSnapshotOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteDBSnapshotResult"))
         let dbSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshot.self, forKey: .dbSnapshot)
         dbSnapshot = dbSnapshotDecoded
+    }
+}
+
+enum DeleteDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBSnapshotState": return try await InvalidDBSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21829,6 +21829,16 @@ extension DeleteDBSubnetGroupInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteDBSubnetGroupOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeleteDBSubnetGroupOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeleteDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -21839,16 +21849,6 @@ enum DeleteDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeleteDBSubnetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeleteDBSubnetGroupOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DeleteEventSubscriptionInput: Swift.Encodable {
@@ -21898,22 +21898,11 @@ extension DeleteEventSubscriptionInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "InvalidEventSubscriptionState": return try await InvalidEventSubscriptionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteEventSubscriptionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteEventSubscriptionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteEventSubscriptionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteEventSubscriptionOutputBody = try responseDecoder.decode(responseBody: data)
             self.eventSubscription = output.eventSubscription
         } else {
             self.eventSubscription = nil
@@ -21921,7 +21910,7 @@ extension DeleteEventSubscriptionOutputResponse: ClientRuntime.HttpResponseBindi
     }
 }
 
-public struct DeleteEventSubscriptionOutputResponse: Swift.Equatable {
+public struct DeleteEventSubscriptionOutput: Swift.Equatable {
     /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
     public var eventSubscription: RDSClientTypes.EventSubscription?
 
@@ -21933,11 +21922,11 @@ public struct DeleteEventSubscriptionOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteEventSubscriptionOutputResponseBody: Swift.Equatable {
+struct DeleteEventSubscriptionOutputBody: Swift.Equatable {
     let eventSubscription: RDSClientTypes.EventSubscription?
 }
 
-extension DeleteEventSubscriptionOutputResponseBody: Swift.Decodable {
+extension DeleteEventSubscriptionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case eventSubscription = "EventSubscription"
     }
@@ -21947,6 +21936,17 @@ extension DeleteEventSubscriptionOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteEventSubscriptionResult"))
         let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
         eventSubscription = eventSubscriptionDecoded
+    }
+}
+
+enum DeleteEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "InvalidEventSubscriptionState": return try await InvalidEventSubscriptionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -21996,22 +21996,11 @@ extension DeleteGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum DeleteGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DeleteGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DeleteGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DeleteGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DeleteGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -22019,7 +22008,7 @@ extension DeleteGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct DeleteGlobalClusterOutputResponse: Swift.Equatable {
+public struct DeleteGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -22031,11 +22020,11 @@ public struct DeleteGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct DeleteGlobalClusterOutputResponseBody: Swift.Equatable {
+struct DeleteGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension DeleteGlobalClusterOutputResponseBody: Swift.Decodable {
+extension DeleteGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -22045,6 +22034,17 @@ extension DeleteGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DeleteGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum DeleteGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -22095,6 +22095,16 @@ extension DeleteOptionGroupInputBody: Swift.Decodable {
     }
 }
 
+extension DeleteOptionGroupOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeleteOptionGroupOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeleteOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -22104,16 +22114,6 @@ enum DeleteOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeleteOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeleteOptionGroupOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DeregisterDBProxyTargetsInput: Swift.Encodable {
@@ -22247,6 +22247,16 @@ extension DeregisterDBProxyTargetsInputBody: Swift.Decodable {
     }
 }
 
+extension DeregisterDBProxyTargetsOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct DeregisterDBProxyTargetsOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum DeregisterDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -22258,16 +22268,6 @@ enum DeregisterDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension DeregisterDBProxyTargetsOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct DeregisterDBProxyTargetsOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension DescribeAccountAttributesInput: Swift.Encodable {
@@ -22290,20 +22290,11 @@ public struct DescribeAccountAttributesInput: Swift.Equatable {
     public init() { }
 }
 
-enum DescribeAccountAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeAccountAttributesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeAccountAttributesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeAccountAttributesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeAccountAttributesOutputBody = try responseDecoder.decode(responseBody: data)
             self.accountQuotas = output.accountQuotas
         } else {
             self.accountQuotas = nil
@@ -22312,7 +22303,7 @@ extension DescribeAccountAttributesOutputResponse: ClientRuntime.HttpResponseBin
 }
 
 /// Data returned by the DescribeAccountAttributes action.
-public struct DescribeAccountAttributesOutputResponse: Swift.Equatable {
+public struct DescribeAccountAttributesOutput: Swift.Equatable {
     /// A list of AccountQuota objects. Within this list, each quota has a name, a count of usage toward the quota maximum, and a maximum value for the quota.
     public var accountQuotas: [RDSClientTypes.AccountQuota]?
 
@@ -22324,11 +22315,11 @@ public struct DescribeAccountAttributesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeAccountAttributesOutputResponseBody: Swift.Equatable {
+struct DescribeAccountAttributesOutputBody: Swift.Equatable {
     let accountQuotas: [RDSClientTypes.AccountQuota]?
 }
 
-extension DescribeAccountAttributesOutputResponseBody: Swift.Decodable {
+extension DescribeAccountAttributesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case accountQuotas = "AccountQuotas"
     }
@@ -22354,6 +22345,15 @@ extension DescribeAccountAttributesOutputResponseBody: Swift.Decodable {
             }
         } else {
             accountQuotas = nil
+        }
+    }
+}
+
+enum DescribeAccountAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -22476,21 +22476,11 @@ extension DescribeBlueGreenDeploymentsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeBlueGreenDeploymentsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeBlueGreenDeploymentsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeBlueGreenDeploymentsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeBlueGreenDeploymentsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeBlueGreenDeploymentsOutputBody = try responseDecoder.decode(responseBody: data)
             self.blueGreenDeployments = output.blueGreenDeployments
             self.marker = output.marker
         } else {
@@ -22500,7 +22490,7 @@ extension DescribeBlueGreenDeploymentsOutputResponse: ClientRuntime.HttpResponse
     }
 }
 
-public struct DescribeBlueGreenDeploymentsOutputResponse: Swift.Equatable {
+public struct DescribeBlueGreenDeploymentsOutput: Swift.Equatable {
     /// A list of blue/green deployments in the current account and Amazon Web Services Region.
     public var blueGreenDeployments: [RDSClientTypes.BlueGreenDeployment]?
     /// A pagination token that can be used in a later DescribeBlueGreenDeployments request.
@@ -22516,12 +22506,12 @@ public struct DescribeBlueGreenDeploymentsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeBlueGreenDeploymentsOutputResponseBody: Swift.Equatable {
+struct DescribeBlueGreenDeploymentsOutputBody: Swift.Equatable {
     let blueGreenDeployments: [RDSClientTypes.BlueGreenDeployment]?
     let marker: Swift.String?
 }
 
-extension DescribeBlueGreenDeploymentsOutputResponseBody: Swift.Decodable {
+extension DescribeBlueGreenDeploymentsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case blueGreenDeployments = "BlueGreenDeployments"
         case marker = "Marker"
@@ -22551,6 +22541,16 @@ extension DescribeBlueGreenDeploymentsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeBlueGreenDeploymentsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -22661,21 +22661,11 @@ extension DescribeCertificatesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeCertificatesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "CertificateNotFound": return try await CertificateNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeCertificatesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeCertificatesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeCertificatesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeCertificatesOutputBody = try responseDecoder.decode(responseBody: data)
             self.certificates = output.certificates
             self.defaultCertificateForNewLaunches = output.defaultCertificateForNewLaunches
             self.marker = output.marker
@@ -22688,7 +22678,7 @@ extension DescribeCertificatesOutputResponse: ClientRuntime.HttpResponseBinding 
 }
 
 /// Data returned by the DescribeCertificates action.
-public struct DescribeCertificatesOutputResponse: Swift.Equatable {
+public struct DescribeCertificatesOutput: Swift.Equatable {
     /// The list of Certificate objects for the Amazon Web Services account.
     public var certificates: [RDSClientTypes.Certificate]?
     /// The default root CA for new databases created by your Amazon Web Services account. This is either the root CA override set on your Amazon Web Services account or the system default CA for the Region if no override exists. To override the default CA, use the ModifyCertificates operation.
@@ -22708,13 +22698,13 @@ public struct DescribeCertificatesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeCertificatesOutputResponseBody: Swift.Equatable {
+struct DescribeCertificatesOutputBody: Swift.Equatable {
     let defaultCertificateForNewLaunches: Swift.String?
     let certificates: [RDSClientTypes.Certificate]?
     let marker: Swift.String?
 }
 
-extension DescribeCertificatesOutputResponseBody: Swift.Decodable {
+extension DescribeCertificatesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case certificates = "Certificates"
         case defaultCertificateForNewLaunches = "DefaultCertificateForNewLaunches"
@@ -22747,6 +22737,16 @@ extension DescribeCertificatesOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeCertificatesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "CertificateNotFound": return try await CertificateNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -22879,21 +22879,11 @@ extension DescribeDBClusterAutomatedBackupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterAutomatedBackupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterAutomatedBackupNotFoundFault": return try await DBClusterAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterAutomatedBackupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterAutomatedBackupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterAutomatedBackupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterAutomatedBackupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterAutomatedBackups = output.dbClusterAutomatedBackups
             self.marker = output.marker
         } else {
@@ -22903,7 +22893,7 @@ extension DescribeDBClusterAutomatedBackupsOutputResponse: ClientRuntime.HttpRes
     }
 }
 
-public struct DescribeDBClusterAutomatedBackupsOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterAutomatedBackupsOutput: Swift.Equatable {
     /// A list of DBClusterAutomatedBackup backups.
     public var dbClusterAutomatedBackups: [RDSClientTypes.DBClusterAutomatedBackup]?
     /// The pagination token provided in the previous request. If this parameter is specified the response includes only records beyond the marker, up to MaxRecords.
@@ -22919,12 +22909,12 @@ public struct DescribeDBClusterAutomatedBackupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterAutomatedBackupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterAutomatedBackupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusterAutomatedBackups: [RDSClientTypes.DBClusterAutomatedBackup]?
 }
 
-extension DescribeDBClusterAutomatedBackupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterAutomatedBackupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterAutomatedBackups = "DBClusterAutomatedBackups"
         case marker = "Marker"
@@ -22953,6 +22943,16 @@ extension DescribeDBClusterAutomatedBackupsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusterAutomatedBackups = nil
+        }
+    }
+}
+
+enum DescribeDBClusterAutomatedBackupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterAutomatedBackupNotFoundFault": return try await DBClusterAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -23103,22 +23103,11 @@ extension DescribeDBClusterBacktracksInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterBacktracksOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterBacktrackNotFoundFault": return try await DBClusterBacktrackNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterBacktracksOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterBacktracksOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterBacktracksOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterBacktracksOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterBacktracks = output.dbClusterBacktracks
             self.marker = output.marker
         } else {
@@ -23129,7 +23118,7 @@ extension DescribeDBClusterBacktracksOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// Contains the result of a successful invocation of the DescribeDBClusterBacktracks action.
-public struct DescribeDBClusterBacktracksOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterBacktracksOutput: Swift.Equatable {
     /// Contains a list of backtracks for the user.
     public var dbClusterBacktracks: [RDSClientTypes.DBClusterBacktrack]?
     /// A pagination token that can be used in a later DescribeDBClusterBacktracks request.
@@ -23145,12 +23134,12 @@ public struct DescribeDBClusterBacktracksOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterBacktracksOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterBacktracksOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusterBacktracks: [RDSClientTypes.DBClusterBacktrack]?
 }
 
-extension DescribeDBClusterBacktracksOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterBacktracksOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterBacktracks = "DBClusterBacktracks"
         case marker = "Marker"
@@ -23179,6 +23168,17 @@ extension DescribeDBClusterBacktracksOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusterBacktracks = nil
+        }
+    }
+}
+
+enum DescribeDBClusterBacktracksOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterBacktrackNotFoundFault": return try await DBClusterBacktrackNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -23298,21 +23298,11 @@ extension DescribeDBClusterEndpointsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterEndpointsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterEndpointsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterEndpointsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterEndpointsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterEndpointsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterEndpoints = output.dbClusterEndpoints
             self.marker = output.marker
         } else {
@@ -23322,7 +23312,7 @@ extension DescribeDBClusterEndpointsOutputResponse: ClientRuntime.HttpResponseBi
     }
 }
 
-public struct DescribeDBClusterEndpointsOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterEndpointsOutput: Swift.Equatable {
     /// Contains the details of the endpoints associated with the cluster and matching any filter conditions.
     public var dbClusterEndpoints: [RDSClientTypes.DBClusterEndpoint]?
     /// An optional pagination token provided by a previous DescribeDBClusterEndpoints request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -23338,12 +23328,12 @@ public struct DescribeDBClusterEndpointsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterEndpointsOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterEndpointsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusterEndpoints: [RDSClientTypes.DBClusterEndpoint]?
 }
 
-extension DescribeDBClusterEndpointsOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterEndpointsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterEndpoints = "DBClusterEndpoints"
         case marker = "Marker"
@@ -23372,6 +23362,16 @@ extension DescribeDBClusterEndpointsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusterEndpoints = nil
+        }
+    }
+}
+
+enum DescribeDBClusterEndpointsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -23483,21 +23483,11 @@ extension DescribeDBClusterParameterGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterParameterGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterParameterGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterParameterGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterParameterGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterParameterGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterParameterGroups = output.dbClusterParameterGroups
             self.marker = output.marker
         } else {
@@ -23508,7 +23498,7 @@ extension DescribeDBClusterParameterGroupsOutputResponse: ClientRuntime.HttpResp
 }
 
 ///
-public struct DescribeDBClusterParameterGroupsOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterParameterGroupsOutput: Swift.Equatable {
     /// A list of DB cluster parameter groups.
     public var dbClusterParameterGroups: [RDSClientTypes.DBClusterParameterGroup]?
     /// An optional pagination token provided by a previous DescribeDBClusterParameterGroups request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -23524,12 +23514,12 @@ public struct DescribeDBClusterParameterGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterParameterGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterParameterGroupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusterParameterGroups: [RDSClientTypes.DBClusterParameterGroup]?
 }
 
-extension DescribeDBClusterParameterGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterParameterGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterParameterGroups = "DBClusterParameterGroups"
         case marker = "Marker"
@@ -23558,6 +23548,16 @@ extension DescribeDBClusterParameterGroupsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusterParameterGroups = nil
+        }
+    }
+}
+
+enum DescribeDBClusterParameterGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -23681,21 +23681,11 @@ extension DescribeDBClusterParametersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterParametersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterParametersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterParametersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterParametersOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.parameters = output.parameters
         } else {
@@ -23706,7 +23696,7 @@ extension DescribeDBClusterParametersOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// Provides details about a DB cluster parameter group including the parameters in the DB cluster parameter group.
-public struct DescribeDBClusterParametersOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterParametersOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous DescribeDBClusterParameters request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// Provides a list of parameters for the DB cluster parameter group.
@@ -23722,12 +23712,12 @@ public struct DescribeDBClusterParametersOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterParametersOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterParametersOutputBody: Swift.Equatable {
     let parameters: [RDSClientTypes.Parameter]?
     let marker: Swift.String?
 }
 
-extension DescribeDBClusterParametersOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterParametersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case parameters = "Parameters"
@@ -23757,6 +23747,16 @@ extension DescribeDBClusterParametersOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBClusterParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -23807,21 +23807,11 @@ extension DescribeDBClusterSnapshotAttributesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterSnapshotAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterSnapshotAttributesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterSnapshotAttributesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterSnapshotAttributesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterSnapshotAttributesOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterSnapshotAttributesResult = output.dbClusterSnapshotAttributesResult
         } else {
             self.dbClusterSnapshotAttributesResult = nil
@@ -23829,7 +23819,7 @@ extension DescribeDBClusterSnapshotAttributesOutputResponse: ClientRuntime.HttpR
     }
 }
 
-public struct DescribeDBClusterSnapshotAttributesOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterSnapshotAttributesOutput: Swift.Equatable {
     /// Contains the results of a successful call to the DescribeDBClusterSnapshotAttributes API action. Manual DB cluster snapshot attributes are used to authorize other Amazon Web Services accounts to copy or restore a manual DB cluster snapshot. For more information, see the ModifyDBClusterSnapshotAttribute API action.
     public var dbClusterSnapshotAttributesResult: RDSClientTypes.DBClusterSnapshotAttributesResult?
 
@@ -23841,11 +23831,11 @@ public struct DescribeDBClusterSnapshotAttributesOutputResponse: Swift.Equatable
     }
 }
 
-struct DescribeDBClusterSnapshotAttributesOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterSnapshotAttributesOutputBody: Swift.Equatable {
     let dbClusterSnapshotAttributesResult: RDSClientTypes.DBClusterSnapshotAttributesResult?
 }
 
-extension DescribeDBClusterSnapshotAttributesOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterSnapshotAttributesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterSnapshotAttributesResult = "DBClusterSnapshotAttributesResult"
     }
@@ -23855,6 +23845,16 @@ extension DescribeDBClusterSnapshotAttributesOutputResponseBody: Swift.Decodable
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DescribeDBClusterSnapshotAttributesResult"))
         let dbClusterSnapshotAttributesResultDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshotAttributesResult.self, forKey: .dbClusterSnapshotAttributesResult)
         dbClusterSnapshotAttributesResult = dbClusterSnapshotAttributesResultDecoded
+    }
+}
+
+enum DescribeDBClusterSnapshotAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -24043,21 +24043,11 @@ extension DescribeDBClusterSnapshotsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClusterSnapshotsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClusterSnapshotsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClusterSnapshotsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClusterSnapshotsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClusterSnapshotsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterSnapshots = output.dbClusterSnapshots
             self.marker = output.marker
         } else {
@@ -24068,7 +24058,7 @@ extension DescribeDBClusterSnapshotsOutputResponse: ClientRuntime.HttpResponseBi
 }
 
 /// Provides a list of DB cluster snapshots for the user as the result of a call to the DescribeDBClusterSnapshots action.
-public struct DescribeDBClusterSnapshotsOutputResponse: Swift.Equatable {
+public struct DescribeDBClusterSnapshotsOutput: Swift.Equatable {
     /// Provides a list of DB cluster snapshots for the user.
     public var dbClusterSnapshots: [RDSClientTypes.DBClusterSnapshot]?
     /// An optional pagination token provided by a previous DescribeDBClusterSnapshots request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -24084,12 +24074,12 @@ public struct DescribeDBClusterSnapshotsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClusterSnapshotsOutputResponseBody: Swift.Equatable {
+struct DescribeDBClusterSnapshotsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusterSnapshots: [RDSClientTypes.DBClusterSnapshot]?
 }
 
-extension DescribeDBClusterSnapshotsOutputResponseBody: Swift.Decodable {
+extension DescribeDBClusterSnapshotsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterSnapshots = "DBClusterSnapshots"
         case marker = "Marker"
@@ -24118,6 +24108,16 @@ extension DescribeDBClusterSnapshotsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusterSnapshots = nil
+        }
+    }
+}
+
+enum DescribeDBClusterSnapshotsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -24250,21 +24250,11 @@ extension DescribeDBClustersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBClustersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBClustersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBClustersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBClustersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBClustersOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusters = output.dbClusters
             self.marker = output.marker
         } else {
@@ -24275,7 +24265,7 @@ extension DescribeDBClustersOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the result of a successful invocation of the DescribeDBClusters action.
-public struct DescribeDBClustersOutputResponse: Swift.Equatable {
+public struct DescribeDBClustersOutput: Swift.Equatable {
     /// Contains a list of DB clusters for the user.
     public var dbClusters: [RDSClientTypes.DBCluster]?
     /// A pagination token that can be used in a later DescribeDBClusters request.
@@ -24291,12 +24281,12 @@ public struct DescribeDBClustersOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBClustersOutputResponseBody: Swift.Equatable {
+struct DescribeDBClustersOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbClusters: [RDSClientTypes.DBCluster]?
 }
 
-extension DescribeDBClustersOutputResponseBody: Swift.Decodable {
+extension DescribeDBClustersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusters = "DBClusters"
         case marker = "Marker"
@@ -24325,6 +24315,16 @@ extension DescribeDBClustersOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbClusters = nil
+        }
+    }
+}
+
+enum DescribeDBClustersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -24556,20 +24556,11 @@ extension DescribeDBEngineVersionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBEngineVersionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBEngineVersionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBEngineVersionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBEngineVersionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBEngineVersionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbEngineVersions = output.dbEngineVersions
             self.marker = output.marker
         } else {
@@ -24580,7 +24571,7 @@ extension DescribeDBEngineVersionsOutputResponse: ClientRuntime.HttpResponseBind
 }
 
 /// Contains the result of a successful invocation of the DescribeDBEngineVersions action.
-public struct DescribeDBEngineVersionsOutputResponse: Swift.Equatable {
+public struct DescribeDBEngineVersionsOutput: Swift.Equatable {
     /// A list of DBEngineVersion elements.
     public var dbEngineVersions: [RDSClientTypes.DBEngineVersion]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -24596,12 +24587,12 @@ public struct DescribeDBEngineVersionsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBEngineVersionsOutputResponseBody: Swift.Equatable {
+struct DescribeDBEngineVersionsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbEngineVersions: [RDSClientTypes.DBEngineVersion]?
 }
 
-extension DescribeDBEngineVersionsOutputResponseBody: Swift.Decodable {
+extension DescribeDBEngineVersionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbEngineVersions = "DBEngineVersions"
         case marker = "Marker"
@@ -24630,6 +24621,15 @@ extension DescribeDBEngineVersionsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbEngineVersions = nil
+        }
+    }
+}
+
+enum DescribeDBEngineVersionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -24779,21 +24779,11 @@ extension DescribeDBInstanceAutomatedBackupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBInstanceAutomatedBackupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceAutomatedBackupNotFound": return try await DBInstanceAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBInstanceAutomatedBackupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBInstanceAutomatedBackupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBInstanceAutomatedBackupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBInstanceAutomatedBackupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstanceAutomatedBackups = output.dbInstanceAutomatedBackups
             self.marker = output.marker
         } else {
@@ -24804,7 +24794,7 @@ extension DescribeDBInstanceAutomatedBackupsOutputResponse: ClientRuntime.HttpRe
 }
 
 /// Contains the result of a successful invocation of the DescribeDBInstanceAutomatedBackups action.
-public struct DescribeDBInstanceAutomatedBackupsOutputResponse: Swift.Equatable {
+public struct DescribeDBInstanceAutomatedBackupsOutput: Swift.Equatable {
     /// A list of DBInstanceAutomatedBackup instances.
     public var dbInstanceAutomatedBackups: [RDSClientTypes.DBInstanceAutomatedBackup]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -24820,12 +24810,12 @@ public struct DescribeDBInstanceAutomatedBackupsOutputResponse: Swift.Equatable 
     }
 }
 
-struct DescribeDBInstanceAutomatedBackupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBInstanceAutomatedBackupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbInstanceAutomatedBackups: [RDSClientTypes.DBInstanceAutomatedBackup]?
 }
 
-extension DescribeDBInstanceAutomatedBackupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBInstanceAutomatedBackupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstanceAutomatedBackups = "DBInstanceAutomatedBackups"
         case marker = "Marker"
@@ -24854,6 +24844,16 @@ extension DescribeDBInstanceAutomatedBackupsOutputResponseBody: Swift.Decodable 
             }
         } else {
             dbInstanceAutomatedBackups = nil
+        }
+    }
+}
+
+enum DescribeDBInstanceAutomatedBackupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceAutomatedBackupNotFound": return try await DBInstanceAutomatedBackupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -24975,21 +24975,11 @@ extension DescribeDBInstancesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBInstancesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBInstancesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBInstancesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBInstancesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBInstancesOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstances = output.dbInstances
             self.marker = output.marker
         } else {
@@ -25000,7 +24990,7 @@ extension DescribeDBInstancesOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the result of a successful invocation of the DescribeDBInstances action.
-public struct DescribeDBInstancesOutputResponse: Swift.Equatable {
+public struct DescribeDBInstancesOutput: Swift.Equatable {
     /// A list of DBInstance instances.
     public var dbInstances: [RDSClientTypes.DBInstance]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords .
@@ -25016,12 +25006,12 @@ public struct DescribeDBInstancesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBInstancesOutputResponseBody: Swift.Equatable {
+struct DescribeDBInstancesOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbInstances: [RDSClientTypes.DBInstance]?
 }
 
-extension DescribeDBInstancesOutputResponseBody: Swift.Decodable {
+extension DescribeDBInstancesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstances = "DBInstances"
         case marker = "Marker"
@@ -25050,6 +25040,16 @@ extension DescribeDBInstancesOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbInstances = nil
+        }
+    }
+}
+
+enum DescribeDBInstancesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -25250,21 +25250,11 @@ extension DescribeDBLogFilesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBLogFilesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBLogFilesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBLogFilesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBLogFilesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBLogFilesOutputBody = try responseDecoder.decode(responseBody: data)
             self.describeDBLogFiles = output.describeDBLogFiles
             self.marker = output.marker
         } else {
@@ -25275,7 +25265,7 @@ extension DescribeDBLogFilesOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// The response from a call to DescribeDBLogFiles.
-public struct DescribeDBLogFilesOutputResponse: Swift.Equatable {
+public struct DescribeDBLogFilesOutput: Swift.Equatable {
     /// The DB log files returned.
     public var describeDBLogFiles: [RDSClientTypes.DescribeDBLogFilesDetails]?
     /// A pagination token that can be used in a later DescribeDBLogFiles request.
@@ -25291,12 +25281,12 @@ public struct DescribeDBLogFilesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBLogFilesOutputResponseBody: Swift.Equatable {
+struct DescribeDBLogFilesOutputBody: Swift.Equatable {
     let describeDBLogFiles: [RDSClientTypes.DescribeDBLogFilesDetails]?
     let marker: Swift.String?
 }
 
-extension DescribeDBLogFilesOutputResponseBody: Swift.Decodable {
+extension DescribeDBLogFilesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case describeDBLogFiles = "DescribeDBLogFiles"
         case marker = "Marker"
@@ -25326,6 +25316,16 @@ extension DescribeDBLogFilesOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBLogFilesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -25436,21 +25436,11 @@ extension DescribeDBParameterGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBParameterGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBParameterGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBParameterGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBParameterGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBParameterGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbParameterGroups = output.dbParameterGroups
             self.marker = output.marker
         } else {
@@ -25461,7 +25451,7 @@ extension DescribeDBParameterGroupsOutputResponse: ClientRuntime.HttpResponseBin
 }
 
 /// Contains the result of a successful invocation of the DescribeDBParameterGroups action.
-public struct DescribeDBParameterGroupsOutputResponse: Swift.Equatable {
+public struct DescribeDBParameterGroupsOutput: Swift.Equatable {
     /// A list of DBParameterGroup instances.
     public var dbParameterGroups: [RDSClientTypes.DBParameterGroup]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -25477,12 +25467,12 @@ public struct DescribeDBParameterGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBParameterGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBParameterGroupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbParameterGroups: [RDSClientTypes.DBParameterGroup]?
 }
 
-extension DescribeDBParameterGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBParameterGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbParameterGroups = "DBParameterGroups"
         case marker = "Marker"
@@ -25511,6 +25501,16 @@ extension DescribeDBParameterGroupsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbParameterGroups = nil
+        }
+    }
+}
+
+enum DescribeDBParameterGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -25633,21 +25633,11 @@ extension DescribeDBParametersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBParametersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBParametersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBParametersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBParametersOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.parameters = output.parameters
         } else {
@@ -25658,7 +25648,7 @@ extension DescribeDBParametersOutputResponse: ClientRuntime.HttpResponseBinding 
 }
 
 /// Contains the result of a successful invocation of the DescribeDBParameters action.
-public struct DescribeDBParametersOutputResponse: Swift.Equatable {
+public struct DescribeDBParametersOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// A list of Parameter values.
@@ -25674,12 +25664,12 @@ public struct DescribeDBParametersOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBParametersOutputResponseBody: Swift.Equatable {
+struct DescribeDBParametersOutputBody: Swift.Equatable {
     let parameters: [RDSClientTypes.Parameter]?
     let marker: Swift.String?
 }
 
-extension DescribeDBParametersOutputResponseBody: Swift.Decodable {
+extension DescribeDBParametersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case parameters = "Parameters"
@@ -25709,6 +25699,16 @@ extension DescribeDBParametersOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -25816,21 +25816,11 @@ extension DescribeDBProxiesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBProxiesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBProxiesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBProxiesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBProxiesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBProxiesOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxies = output.dbProxies
             self.marker = output.marker
         } else {
@@ -25840,7 +25830,7 @@ extension DescribeDBProxiesOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct DescribeDBProxiesOutputResponse: Swift.Equatable {
+public struct DescribeDBProxiesOutput: Swift.Equatable {
     /// A return value representing an arbitrary number of DBProxy data structures.
     public var dbProxies: [RDSClientTypes.DBProxy]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -25856,12 +25846,12 @@ public struct DescribeDBProxiesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBProxiesOutputResponseBody: Swift.Equatable {
+struct DescribeDBProxiesOutputBody: Swift.Equatable {
     let dbProxies: [RDSClientTypes.DBProxy]?
     let marker: Swift.String?
 }
 
-extension DescribeDBProxiesOutputResponseBody: Swift.Decodable {
+extension DescribeDBProxiesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxies = "DBProxies"
         case marker = "Marker"
@@ -25891,6 +25881,16 @@ extension DescribeDBProxiesOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBProxiesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -26009,22 +26009,11 @@ extension DescribeDBProxyEndpointsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBProxyEndpointsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBProxyEndpointsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBProxyEndpointsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBProxyEndpointsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBProxyEndpointsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyEndpoints = output.dbProxyEndpoints
             self.marker = output.marker
         } else {
@@ -26034,7 +26023,7 @@ extension DescribeDBProxyEndpointsOutputResponse: ClientRuntime.HttpResponseBind
     }
 }
 
-public struct DescribeDBProxyEndpointsOutputResponse: Swift.Equatable {
+public struct DescribeDBProxyEndpointsOutput: Swift.Equatable {
     /// The list of ProxyEndpoint objects returned by the API operation.
     public var dbProxyEndpoints: [RDSClientTypes.DBProxyEndpoint]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -26050,12 +26039,12 @@ public struct DescribeDBProxyEndpointsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBProxyEndpointsOutputResponseBody: Swift.Equatable {
+struct DescribeDBProxyEndpointsOutputBody: Swift.Equatable {
     let dbProxyEndpoints: [RDSClientTypes.DBProxyEndpoint]?
     let marker: Swift.String?
 }
 
-extension DescribeDBProxyEndpointsOutputResponseBody: Swift.Decodable {
+extension DescribeDBProxyEndpointsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyEndpoints = "DBProxyEndpoints"
         case marker = "Marker"
@@ -26085,6 +26074,17 @@ extension DescribeDBProxyEndpointsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBProxyEndpointsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -26204,23 +26204,11 @@ extension DescribeDBProxyTargetGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBProxyTargetGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBProxyTargetGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBProxyTargetGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBProxyTargetGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBProxyTargetGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.targetGroups = output.targetGroups
         } else {
@@ -26230,7 +26218,7 @@ extension DescribeDBProxyTargetGroupsOutputResponse: ClientRuntime.HttpResponseB
     }
 }
 
-public struct DescribeDBProxyTargetGroupsOutputResponse: Swift.Equatable {
+public struct DescribeDBProxyTargetGroupsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// An arbitrary number of DBProxyTargetGroup objects, containing details of the corresponding target groups.
@@ -26246,12 +26234,12 @@ public struct DescribeDBProxyTargetGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBProxyTargetGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBProxyTargetGroupsOutputBody: Swift.Equatable {
     let targetGroups: [RDSClientTypes.DBProxyTargetGroup]?
     let marker: Swift.String?
 }
 
-extension DescribeDBProxyTargetGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBProxyTargetGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case targetGroups = "TargetGroups"
@@ -26281,6 +26269,18 @@ extension DescribeDBProxyTargetGroupsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBProxyTargetGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -26400,24 +26400,11 @@ extension DescribeDBProxyTargetsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetNotFoundFault": return try await DBProxyTargetNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBProxyTargetsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBProxyTargetsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBProxyTargetsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBProxyTargetsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.targets = output.targets
         } else {
@@ -26427,7 +26414,7 @@ extension DescribeDBProxyTargetsOutputResponse: ClientRuntime.HttpResponseBindin
     }
 }
 
-public struct DescribeDBProxyTargetsOutputResponse: Swift.Equatable {
+public struct DescribeDBProxyTargetsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// An arbitrary number of DBProxyTarget objects, containing details of the corresponding targets.
@@ -26443,12 +26430,12 @@ public struct DescribeDBProxyTargetsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBProxyTargetsOutputResponseBody: Swift.Equatable {
+struct DescribeDBProxyTargetsOutputBody: Swift.Equatable {
     let targets: [RDSClientTypes.DBProxyTarget]?
     let marker: Swift.String?
 }
 
-extension DescribeDBProxyTargetsOutputResponseBody: Swift.Decodable {
+extension DescribeDBProxyTargetsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case targets = "Targets"
@@ -26478,6 +26465,19 @@ extension DescribeDBProxyTargetsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetNotFoundFault": return try await DBProxyTargetNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -26586,21 +26586,11 @@ extension DescribeDBSecurityGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBSecurityGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBSecurityGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBSecurityGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBSecurityGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBSecurityGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSecurityGroups = output.dbSecurityGroups
             self.marker = output.marker
         } else {
@@ -26611,7 +26601,7 @@ extension DescribeDBSecurityGroupsOutputResponse: ClientRuntime.HttpResponseBind
 }
 
 /// Contains the result of a successful invocation of the DescribeDBSecurityGroups action.
-public struct DescribeDBSecurityGroupsOutputResponse: Swift.Equatable {
+public struct DescribeDBSecurityGroupsOutput: Swift.Equatable {
     /// A list of DBSecurityGroup instances.
     public var dbSecurityGroups: [RDSClientTypes.DBSecurityGroup]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -26627,12 +26617,12 @@ public struct DescribeDBSecurityGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBSecurityGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBSecurityGroupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbSecurityGroups: [RDSClientTypes.DBSecurityGroup]?
 }
 
-extension DescribeDBSecurityGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBSecurityGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSecurityGroups = "DBSecurityGroups"
         case marker = "Marker"
@@ -26661,6 +26651,16 @@ extension DescribeDBSecurityGroupsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbSecurityGroups = nil
+        }
+    }
+}
+
+enum DescribeDBSecurityGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -26712,21 +26712,11 @@ extension DescribeDBSnapshotAttributesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBSnapshotAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBSnapshotAttributesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBSnapshotAttributesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBSnapshotAttributesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBSnapshotAttributesOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshotAttributesResult = output.dbSnapshotAttributesResult
         } else {
             self.dbSnapshotAttributesResult = nil
@@ -26734,7 +26724,7 @@ extension DescribeDBSnapshotAttributesOutputResponse: ClientRuntime.HttpResponse
     }
 }
 
-public struct DescribeDBSnapshotAttributesOutputResponse: Swift.Equatable {
+public struct DescribeDBSnapshotAttributesOutput: Swift.Equatable {
     /// Contains the results of a successful call to the DescribeDBSnapshotAttributes API action. Manual DB snapshot attributes are used to authorize other Amazon Web Services accounts to copy or restore a manual DB snapshot. For more information, see the ModifyDBSnapshotAttribute API action.
     public var dbSnapshotAttributesResult: RDSClientTypes.DBSnapshotAttributesResult?
 
@@ -26746,11 +26736,11 @@ public struct DescribeDBSnapshotAttributesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBSnapshotAttributesOutputResponseBody: Swift.Equatable {
+struct DescribeDBSnapshotAttributesOutputBody: Swift.Equatable {
     let dbSnapshotAttributesResult: RDSClientTypes.DBSnapshotAttributesResult?
 }
 
-extension DescribeDBSnapshotAttributesOutputResponseBody: Swift.Decodable {
+extension DescribeDBSnapshotAttributesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshotAttributesResult = "DBSnapshotAttributesResult"
     }
@@ -26760,6 +26750,16 @@ extension DescribeDBSnapshotAttributesOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DescribeDBSnapshotAttributesResult"))
         let dbSnapshotAttributesResultDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshotAttributesResult.self, forKey: .dbSnapshotAttributesResult)
         dbSnapshotAttributesResult = dbSnapshotAttributesResultDecoded
+    }
+}
+
+enum DescribeDBSnapshotAttributesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -26952,21 +26952,11 @@ extension DescribeDBSnapshotsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBSnapshotsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBSnapshotsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBSnapshotsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBSnapshotsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBSnapshotsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshots = output.dbSnapshots
             self.marker = output.marker
         } else {
@@ -26977,7 +26967,7 @@ extension DescribeDBSnapshotsOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the result of a successful invocation of the DescribeDBSnapshots action.
-public struct DescribeDBSnapshotsOutputResponse: Swift.Equatable {
+public struct DescribeDBSnapshotsOutput: Swift.Equatable {
     /// A list of DBSnapshot instances.
     public var dbSnapshots: [RDSClientTypes.DBSnapshot]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -26993,12 +26983,12 @@ public struct DescribeDBSnapshotsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBSnapshotsOutputResponseBody: Swift.Equatable {
+struct DescribeDBSnapshotsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbSnapshots: [RDSClientTypes.DBSnapshot]?
 }
 
-extension DescribeDBSnapshotsOutputResponseBody: Swift.Decodable {
+extension DescribeDBSnapshotsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshots = "DBSnapshots"
         case marker = "Marker"
@@ -27027,6 +27017,16 @@ extension DescribeDBSnapshotsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbSnapshots = nil
+        }
+    }
+}
+
+enum DescribeDBSnapshotsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -27136,21 +27136,11 @@ extension DescribeDBSubnetGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeDBSubnetGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSubnetGroupNotFoundFault": return try await DBSubnetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeDBSubnetGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeDBSubnetGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeDBSubnetGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeDBSubnetGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSubnetGroups = output.dbSubnetGroups
             self.marker = output.marker
         } else {
@@ -27161,7 +27151,7 @@ extension DescribeDBSubnetGroupsOutputResponse: ClientRuntime.HttpResponseBindin
 }
 
 /// Contains the result of a successful invocation of the DescribeDBSubnetGroups action.
-public struct DescribeDBSubnetGroupsOutputResponse: Swift.Equatable {
+public struct DescribeDBSubnetGroupsOutput: Swift.Equatable {
     /// A list of DBSubnetGroup instances.
     public var dbSubnetGroups: [RDSClientTypes.DBSubnetGroup]?
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -27177,12 +27167,12 @@ public struct DescribeDBSubnetGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeDBSubnetGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeDBSubnetGroupsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let dbSubnetGroups: [RDSClientTypes.DBSubnetGroup]?
 }
 
-extension DescribeDBSubnetGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeDBSubnetGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSubnetGroups = "DBSubnetGroups"
         case marker = "Marker"
@@ -27211,6 +27201,16 @@ extension DescribeDBSubnetGroupsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbSubnetGroups = nil
+        }
+    }
+}
+
+enum DescribeDBSubnetGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSubnetGroupNotFoundFault": return try await DBSubnetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -27321,20 +27321,11 @@ extension DescribeEngineDefaultClusterParametersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeEngineDefaultClusterParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeEngineDefaultClusterParametersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeEngineDefaultClusterParametersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeEngineDefaultClusterParametersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeEngineDefaultClusterParametersOutputBody = try responseDecoder.decode(responseBody: data)
             self.engineDefaults = output.engineDefaults
         } else {
             self.engineDefaults = nil
@@ -27342,7 +27333,7 @@ extension DescribeEngineDefaultClusterParametersOutputResponse: ClientRuntime.Ht
     }
 }
 
-public struct DescribeEngineDefaultClusterParametersOutputResponse: Swift.Equatable {
+public struct DescribeEngineDefaultClusterParametersOutput: Swift.Equatable {
     /// Contains the result of a successful invocation of the DescribeEngineDefaultParameters action.
     public var engineDefaults: RDSClientTypes.EngineDefaults?
 
@@ -27354,11 +27345,11 @@ public struct DescribeEngineDefaultClusterParametersOutputResponse: Swift.Equata
     }
 }
 
-struct DescribeEngineDefaultClusterParametersOutputResponseBody: Swift.Equatable {
+struct DescribeEngineDefaultClusterParametersOutputBody: Swift.Equatable {
     let engineDefaults: RDSClientTypes.EngineDefaults?
 }
 
-extension DescribeEngineDefaultClusterParametersOutputResponseBody: Swift.Decodable {
+extension DescribeEngineDefaultClusterParametersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case engineDefaults = "EngineDefaults"
     }
@@ -27368,6 +27359,15 @@ extension DescribeEngineDefaultClusterParametersOutputResponseBody: Swift.Decoda
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DescribeEngineDefaultClusterParametersResult"))
         let engineDefaultsDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EngineDefaults.self, forKey: .engineDefaults)
         engineDefaults = engineDefaultsDecoded
+    }
+}
+
+enum DescribeEngineDefaultClusterParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -27569,20 +27569,11 @@ extension DescribeEngineDefaultParametersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeEngineDefaultParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeEngineDefaultParametersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeEngineDefaultParametersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeEngineDefaultParametersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeEngineDefaultParametersOutputBody = try responseDecoder.decode(responseBody: data)
             self.engineDefaults = output.engineDefaults
         } else {
             self.engineDefaults = nil
@@ -27590,7 +27581,7 @@ extension DescribeEngineDefaultParametersOutputResponse: ClientRuntime.HttpRespo
     }
 }
 
-public struct DescribeEngineDefaultParametersOutputResponse: Swift.Equatable {
+public struct DescribeEngineDefaultParametersOutput: Swift.Equatable {
     /// Contains the result of a successful invocation of the DescribeEngineDefaultParameters action.
     public var engineDefaults: RDSClientTypes.EngineDefaults?
 
@@ -27602,11 +27593,11 @@ public struct DescribeEngineDefaultParametersOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeEngineDefaultParametersOutputResponseBody: Swift.Equatable {
+struct DescribeEngineDefaultParametersOutputBody: Swift.Equatable {
     let engineDefaults: RDSClientTypes.EngineDefaults?
 }
 
-extension DescribeEngineDefaultParametersOutputResponseBody: Swift.Decodable {
+extension DescribeEngineDefaultParametersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case engineDefaults = "EngineDefaults"
     }
@@ -27616,6 +27607,15 @@ extension DescribeEngineDefaultParametersOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DescribeEngineDefaultParametersResult"))
         let engineDefaultsDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EngineDefaults.self, forKey: .engineDefaults)
         engineDefaults = engineDefaultsDecoded
+    }
+}
+
+enum DescribeEngineDefaultParametersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -27702,20 +27702,11 @@ extension DescribeEventCategoriesInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeEventCategoriesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeEventCategoriesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeEventCategoriesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeEventCategoriesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeEventCategoriesOutputBody = try responseDecoder.decode(responseBody: data)
             self.eventCategoriesMapList = output.eventCategoriesMapList
         } else {
             self.eventCategoriesMapList = nil
@@ -27724,7 +27715,7 @@ extension DescribeEventCategoriesOutputResponse: ClientRuntime.HttpResponseBindi
 }
 
 /// Data returned from the DescribeEventCategories operation.
-public struct DescribeEventCategoriesOutputResponse: Swift.Equatable {
+public struct DescribeEventCategoriesOutput: Swift.Equatable {
     /// A list of EventCategoriesMap data types.
     public var eventCategoriesMapList: [RDSClientTypes.EventCategoriesMap]?
 
@@ -27736,11 +27727,11 @@ public struct DescribeEventCategoriesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeEventCategoriesOutputResponseBody: Swift.Equatable {
+struct DescribeEventCategoriesOutputBody: Swift.Equatable {
     let eventCategoriesMapList: [RDSClientTypes.EventCategoriesMap]?
 }
 
-extension DescribeEventCategoriesOutputResponseBody: Swift.Decodable {
+extension DescribeEventCategoriesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case eventCategoriesMapList = "EventCategoriesMapList"
     }
@@ -27766,6 +27757,15 @@ extension DescribeEventCategoriesOutputResponseBody: Swift.Decodable {
             }
         } else {
             eventCategoriesMapList = nil
+        }
+    }
+}
+
+enum DescribeEventCategoriesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -27875,21 +27875,11 @@ extension DescribeEventSubscriptionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeEventSubscriptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeEventSubscriptionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeEventSubscriptionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeEventSubscriptionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeEventSubscriptionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.eventSubscriptionsList = output.eventSubscriptionsList
             self.marker = output.marker
         } else {
@@ -27900,7 +27890,7 @@ extension DescribeEventSubscriptionsOutputResponse: ClientRuntime.HttpResponseBi
 }
 
 /// Data returned by the DescribeEventSubscriptions action.
-public struct DescribeEventSubscriptionsOutputResponse: Swift.Equatable {
+public struct DescribeEventSubscriptionsOutput: Swift.Equatable {
     /// A list of EventSubscriptions data types.
     public var eventSubscriptionsList: [RDSClientTypes.EventSubscription]?
     /// An optional pagination token provided by a previous DescribeOrderableDBInstanceOptions request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -27916,12 +27906,12 @@ public struct DescribeEventSubscriptionsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeEventSubscriptionsOutputResponseBody: Swift.Equatable {
+struct DescribeEventSubscriptionsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let eventSubscriptionsList: [RDSClientTypes.EventSubscription]?
 }
 
-extension DescribeEventSubscriptionsOutputResponseBody: Swift.Decodable {
+extension DescribeEventSubscriptionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case eventSubscriptionsList = "EventSubscriptionsList"
         case marker = "Marker"
@@ -27950,6 +27940,16 @@ extension DescribeEventSubscriptionsOutputResponseBody: Swift.Decodable {
             }
         } else {
             eventSubscriptionsList = nil
+        }
+    }
+}
+
+enum DescribeEventSubscriptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -28158,20 +28158,11 @@ extension DescribeEventsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeEventsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeEventsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeEventsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeEventsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeEventsOutputBody = try responseDecoder.decode(responseBody: data)
             self.events = output.events
             self.marker = output.marker
         } else {
@@ -28182,7 +28173,7 @@ extension DescribeEventsOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the result of a successful invocation of the DescribeEvents action.
-public struct DescribeEventsOutputResponse: Swift.Equatable {
+public struct DescribeEventsOutput: Swift.Equatable {
     /// A list of Event instances.
     public var events: [RDSClientTypes.Event]?
     /// An optional pagination token provided by a previous Events request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -28198,12 +28189,12 @@ public struct DescribeEventsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeEventsOutputResponseBody: Swift.Equatable {
+struct DescribeEventsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let events: [RDSClientTypes.Event]?
 }
 
-extension DescribeEventsOutputResponseBody: Swift.Decodable {
+extension DescribeEventsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case events = "Events"
         case marker = "Marker"
@@ -28232,6 +28223,15 @@ extension DescribeEventsOutputResponseBody: Swift.Decodable {
             }
         } else {
             events = nil
+        }
+    }
+}
+
+enum DescribeEventsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -28382,21 +28382,11 @@ extension DescribeExportTasksInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeExportTasksOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "ExportTaskNotFound": return try await ExportTaskNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeExportTasksOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeExportTasksOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeExportTasksOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeExportTasksOutputBody = try responseDecoder.decode(responseBody: data)
             self.exportTasks = output.exportTasks
             self.marker = output.marker
         } else {
@@ -28406,7 +28396,7 @@ extension DescribeExportTasksOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct DescribeExportTasksOutputResponse: Swift.Equatable {
+public struct DescribeExportTasksOutput: Swift.Equatable {
     /// Information about an export of a snapshot or cluster to Amazon S3.
     public var exportTasks: [RDSClientTypes.ExportTask]?
     /// A pagination token that can be used in a later DescribeExportTasks request. A marker is used for pagination to identify the location to begin output for the next response of DescribeExportTasks.
@@ -28422,12 +28412,12 @@ public struct DescribeExportTasksOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeExportTasksOutputResponseBody: Swift.Equatable {
+struct DescribeExportTasksOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let exportTasks: [RDSClientTypes.ExportTask]?
 }
 
-extension DescribeExportTasksOutputResponseBody: Swift.Decodable {
+extension DescribeExportTasksOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case exportTasks = "ExportTasks"
         case marker = "Marker"
@@ -28456,6 +28446,16 @@ extension DescribeExportTasksOutputResponseBody: Swift.Decodable {
             }
         } else {
             exportTasks = nil
+        }
+    }
+}
+
+enum DescribeExportTasksOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "ExportTaskNotFound": return try await ExportTaskNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -28566,21 +28566,11 @@ extension DescribeGlobalClustersInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeGlobalClustersOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeGlobalClustersOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeGlobalClustersOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeGlobalClustersOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeGlobalClustersOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalClusters = output.globalClusters
             self.marker = output.marker
         } else {
@@ -28590,7 +28580,7 @@ extension DescribeGlobalClustersOutputResponse: ClientRuntime.HttpResponseBindin
     }
 }
 
-public struct DescribeGlobalClustersOutputResponse: Swift.Equatable {
+public struct DescribeGlobalClustersOutput: Swift.Equatable {
     /// The list of global clusters returned by this request.
     public var globalClusters: [RDSClientTypes.GlobalCluster]?
     /// An optional pagination token provided by a previous DescribeGlobalClusters request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
@@ -28606,12 +28596,12 @@ public struct DescribeGlobalClustersOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeGlobalClustersOutputResponseBody: Swift.Equatable {
+struct DescribeGlobalClustersOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let globalClusters: [RDSClientTypes.GlobalCluster]?
 }
 
-extension DescribeGlobalClustersOutputResponseBody: Swift.Decodable {
+extension DescribeGlobalClustersOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalClusters = "GlobalClusters"
         case marker = "Marker"
@@ -28640,6 +28630,16 @@ extension DescribeGlobalClustersOutputResponseBody: Swift.Decodable {
             }
         } else {
             globalClusters = nil
+        }
+    }
+}
+
+enum DescribeGlobalClustersOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -28783,20 +28783,11 @@ extension DescribeOptionGroupOptionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeOptionGroupOptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeOptionGroupOptionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeOptionGroupOptionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeOptionGroupOptionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeOptionGroupOptionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.optionGroupOptions = output.optionGroupOptions
         } else {
@@ -28807,7 +28798,7 @@ extension DescribeOptionGroupOptionsOutputResponse: ClientRuntime.HttpResponseBi
 }
 
 ///
-public struct DescribeOptionGroupOptionsOutputResponse: Swift.Equatable {
+public struct DescribeOptionGroupOptionsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// List of available option group options.
@@ -28823,12 +28814,12 @@ public struct DescribeOptionGroupOptionsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeOptionGroupOptionsOutputResponseBody: Swift.Equatable {
+struct DescribeOptionGroupOptionsOutputBody: Swift.Equatable {
     let optionGroupOptions: [RDSClientTypes.OptionGroupOption]?
     let marker: Swift.String?
 }
 
-extension DescribeOptionGroupOptionsOutputResponseBody: Swift.Decodable {
+extension DescribeOptionGroupOptionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case optionGroupOptions = "OptionGroupOptions"
@@ -28858,6 +28849,15 @@ extension DescribeOptionGroupOptionsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeOptionGroupOptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -29010,21 +29010,11 @@ extension DescribeOptionGroupsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeOptionGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeOptionGroupsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeOptionGroupsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeOptionGroupsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeOptionGroupsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.optionGroupsList = output.optionGroupsList
         } else {
@@ -29035,7 +29025,7 @@ extension DescribeOptionGroupsOutputResponse: ClientRuntime.HttpResponseBinding 
 }
 
 /// List of option groups.
-public struct DescribeOptionGroupsOutputResponse: Swift.Equatable {
+public struct DescribeOptionGroupsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// List of option groups.
@@ -29051,12 +29041,12 @@ public struct DescribeOptionGroupsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeOptionGroupsOutputResponseBody: Swift.Equatable {
+struct DescribeOptionGroupsOutputBody: Swift.Equatable {
     let optionGroupsList: [RDSClientTypes.OptionGroup]?
     let marker: Swift.String?
 }
 
-extension DescribeOptionGroupsOutputResponseBody: Swift.Decodable {
+extension DescribeOptionGroupsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case optionGroupsList = "OptionGroupsList"
@@ -29086,6 +29076,16 @@ extension DescribeOptionGroupsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeOptionGroupsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -29278,20 +29278,11 @@ extension DescribeOrderableDBInstanceOptionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeOrderableDBInstanceOptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeOrderableDBInstanceOptionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeOrderableDBInstanceOptionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeOrderableDBInstanceOptionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeOrderableDBInstanceOptionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.orderableDBInstanceOptions = output.orderableDBInstanceOptions
         } else {
@@ -29302,7 +29293,7 @@ extension DescribeOrderableDBInstanceOptionsOutputResponse: ClientRuntime.HttpRe
 }
 
 /// Contains the result of a successful invocation of the DescribeOrderableDBInstanceOptions action.
-public struct DescribeOrderableDBInstanceOptionsOutputResponse: Swift.Equatable {
+public struct DescribeOrderableDBInstanceOptionsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous OrderableDBInstanceOptions request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// An OrderableDBInstanceOption structure containing information about orderable options for the DB instance.
@@ -29318,12 +29309,12 @@ public struct DescribeOrderableDBInstanceOptionsOutputResponse: Swift.Equatable 
     }
 }
 
-struct DescribeOrderableDBInstanceOptionsOutputResponseBody: Swift.Equatable {
+struct DescribeOrderableDBInstanceOptionsOutputBody: Swift.Equatable {
     let orderableDBInstanceOptions: [RDSClientTypes.OrderableDBInstanceOption]?
     let marker: Swift.String?
 }
 
-extension DescribeOrderableDBInstanceOptionsOutputResponseBody: Swift.Decodable {
+extension DescribeOrderableDBInstanceOptionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case orderableDBInstanceOptions = "OrderableDBInstanceOptions"
@@ -29353,6 +29344,15 @@ extension DescribeOrderableDBInstanceOptionsOutputResponseBody: Swift.Decodable 
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribeOrderableDBInstanceOptionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -29465,21 +29465,11 @@ extension DescribePendingMaintenanceActionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribePendingMaintenanceActionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribePendingMaintenanceActionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribePendingMaintenanceActionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribePendingMaintenanceActionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribePendingMaintenanceActionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.pendingMaintenanceActions = output.pendingMaintenanceActions
         } else {
@@ -29490,7 +29480,7 @@ extension DescribePendingMaintenanceActionsOutputResponse: ClientRuntime.HttpRes
 }
 
 /// Data returned from the DescribePendingMaintenanceActions action.
-public struct DescribePendingMaintenanceActionsOutputResponse: Swift.Equatable {
+public struct DescribePendingMaintenanceActionsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous DescribePendingMaintenanceActions request. If this parameter is specified, the response includes only records beyond the marker, up to a number of records specified by MaxRecords.
     public var marker: Swift.String?
     /// A list of the pending maintenance actions for the resource.
@@ -29506,12 +29496,12 @@ public struct DescribePendingMaintenanceActionsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribePendingMaintenanceActionsOutputResponseBody: Swift.Equatable {
+struct DescribePendingMaintenanceActionsOutputBody: Swift.Equatable {
     let pendingMaintenanceActions: [RDSClientTypes.ResourcePendingMaintenanceActions]?
     let marker: Swift.String?
 }
 
-extension DescribePendingMaintenanceActionsOutputResponseBody: Swift.Decodable {
+extension DescribePendingMaintenanceActionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case pendingMaintenanceActions = "PendingMaintenanceActions"
@@ -29541,6 +29531,16 @@ extension DescribePendingMaintenanceActionsOutputResponseBody: Swift.Decodable {
         }
         let markerDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .marker)
         marker = markerDecoded
+    }
+}
+
+enum DescribePendingMaintenanceActionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -29886,21 +29886,11 @@ extension DescribeReservedDBInstancesOfferingsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeReservedDBInstancesOfferingsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "ReservedDBInstancesOfferingNotFound": return try await ReservedDBInstancesOfferingNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeReservedDBInstancesOfferingsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeReservedDBInstancesOfferingsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeReservedDBInstancesOfferingsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeReservedDBInstancesOfferingsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.reservedDBInstancesOfferings = output.reservedDBInstancesOfferings
         } else {
@@ -29911,7 +29901,7 @@ extension DescribeReservedDBInstancesOfferingsOutputResponse: ClientRuntime.Http
 }
 
 /// Contains the result of a successful invocation of the DescribeReservedDBInstancesOfferings action.
-public struct DescribeReservedDBInstancesOfferingsOutputResponse: Swift.Equatable {
+public struct DescribeReservedDBInstancesOfferingsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// A list of reserved DB instance offerings.
@@ -29927,12 +29917,12 @@ public struct DescribeReservedDBInstancesOfferingsOutputResponse: Swift.Equatabl
     }
 }
 
-struct DescribeReservedDBInstancesOfferingsOutputResponseBody: Swift.Equatable {
+struct DescribeReservedDBInstancesOfferingsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let reservedDBInstancesOfferings: [RDSClientTypes.ReservedDBInstancesOffering]?
 }
 
-extension DescribeReservedDBInstancesOfferingsOutputResponseBody: Swift.Decodable {
+extension DescribeReservedDBInstancesOfferingsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case reservedDBInstancesOfferings = "ReservedDBInstancesOfferings"
@@ -29965,21 +29955,21 @@ extension DescribeReservedDBInstancesOfferingsOutputResponseBody: Swift.Decodabl
     }
 }
 
-enum DescribeReservedDBInstancesOutputError: ClientRuntime.HttpResponseErrorBinding {
+enum DescribeReservedDBInstancesOfferingsOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
         switch restXMLError.errorCode {
-            case "ReservedDBInstanceNotFound": return try await ReservedDBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ReservedDBInstancesOfferingNotFound": return try await ReservedDBInstancesOfferingNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
 
-extension DescribeReservedDBInstancesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeReservedDBInstancesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeReservedDBInstancesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeReservedDBInstancesOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.reservedDBInstances = output.reservedDBInstances
         } else {
@@ -29990,7 +29980,7 @@ extension DescribeReservedDBInstancesOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// Contains the result of a successful invocation of the DescribeReservedDBInstances action.
-public struct DescribeReservedDBInstancesOutputResponse: Swift.Equatable {
+public struct DescribeReservedDBInstancesOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// A list of reserved DB instances.
@@ -30006,12 +29996,12 @@ public struct DescribeReservedDBInstancesOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeReservedDBInstancesOutputResponseBody: Swift.Equatable {
+struct DescribeReservedDBInstancesOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let reservedDBInstances: [RDSClientTypes.ReservedDBInstance]?
 }
 
-extension DescribeReservedDBInstancesOutputResponseBody: Swift.Decodable {
+extension DescribeReservedDBInstancesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case reservedDBInstances = "ReservedDBInstances"
@@ -30040,6 +30030,16 @@ extension DescribeReservedDBInstancesOutputResponseBody: Swift.Decodable {
             }
         } else {
             reservedDBInstances = nil
+        }
+    }
+}
+
+enum DescribeReservedDBInstancesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "ReservedDBInstanceNotFound": return try await ReservedDBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -30151,20 +30151,11 @@ extension DescribeSourceRegionsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeSourceRegionsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeSourceRegionsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeSourceRegionsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeSourceRegionsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeSourceRegionsOutputBody = try responseDecoder.decode(responseBody: data)
             self.marker = output.marker
             self.sourceRegions = output.sourceRegions
         } else {
@@ -30175,7 +30166,7 @@ extension DescribeSourceRegionsOutputResponse: ClientRuntime.HttpResponseBinding
 }
 
 /// Contains the result of a successful invocation of the DescribeSourceRegions action.
-public struct DescribeSourceRegionsOutputResponse: Swift.Equatable {
+public struct DescribeSourceRegionsOutput: Swift.Equatable {
     /// An optional pagination token provided by a previous request. If this parameter is specified, the response includes only records beyond the marker, up to the value specified by MaxRecords.
     public var marker: Swift.String?
     /// A list of SourceRegion instances that contains each source Amazon Web Services Region that the current Amazon Web Services Region can get a read replica or a DB snapshot from.
@@ -30191,12 +30182,12 @@ public struct DescribeSourceRegionsOutputResponse: Swift.Equatable {
     }
 }
 
-struct DescribeSourceRegionsOutputResponseBody: Swift.Equatable {
+struct DescribeSourceRegionsOutputBody: Swift.Equatable {
     let marker: Swift.String?
     let sourceRegions: [RDSClientTypes.SourceRegion]?
 }
 
-extension DescribeSourceRegionsOutputResponseBody: Swift.Decodable {
+extension DescribeSourceRegionsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case marker = "Marker"
         case sourceRegions = "SourceRegions"
@@ -30225,6 +30216,15 @@ extension DescribeSourceRegionsOutputResponseBody: Swift.Decodable {
             }
         } else {
             sourceRegions = nil
+        }
+    }
+}
+
+enum DescribeSourceRegionsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -30276,22 +30276,11 @@ extension DescribeValidDBInstanceModificationsInputBody: Swift.Decodable {
     }
 }
 
-enum DescribeValidDBInstanceModificationsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DescribeValidDBInstanceModificationsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DescribeValidDBInstanceModificationsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DescribeValidDBInstanceModificationsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DescribeValidDBInstanceModificationsOutputBody = try responseDecoder.decode(responseBody: data)
             self.validDBInstanceModificationsMessage = output.validDBInstanceModificationsMessage
         } else {
             self.validDBInstanceModificationsMessage = nil
@@ -30299,7 +30288,7 @@ extension DescribeValidDBInstanceModificationsOutputResponse: ClientRuntime.Http
     }
 }
 
-public struct DescribeValidDBInstanceModificationsOutputResponse: Swift.Equatable {
+public struct DescribeValidDBInstanceModificationsOutput: Swift.Equatable {
     /// Information about valid modifications that you can make to your DB instance. Contains the result of a successful call to the DescribeValidDBInstanceModifications action. You can use this information when you call ModifyDBInstance.
     public var validDBInstanceModificationsMessage: RDSClientTypes.ValidDBInstanceModificationsMessage?
 
@@ -30311,11 +30300,11 @@ public struct DescribeValidDBInstanceModificationsOutputResponse: Swift.Equatabl
     }
 }
 
-struct DescribeValidDBInstanceModificationsOutputResponseBody: Swift.Equatable {
+struct DescribeValidDBInstanceModificationsOutputBody: Swift.Equatable {
     let validDBInstanceModificationsMessage: RDSClientTypes.ValidDBInstanceModificationsMessage?
 }
 
-extension DescribeValidDBInstanceModificationsOutputResponseBody: Swift.Decodable {
+extension DescribeValidDBInstanceModificationsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case validDBInstanceModificationsMessage = "ValidDBInstanceModificationsMessage"
     }
@@ -30325,6 +30314,17 @@ extension DescribeValidDBInstanceModificationsOutputResponseBody: Swift.Decodabl
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("DescribeValidDBInstanceModificationsResult"))
         let validDBInstanceModificationsMessageDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ValidDBInstanceModificationsMessage.self, forKey: .validDBInstanceModificationsMessage)
         validDBInstanceModificationsMessage = validDBInstanceModificationsMessageDecoded
+    }
+}
+
+enum DescribeValidDBInstanceModificationsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -30639,22 +30639,11 @@ extension DownloadDBLogFilePortionInputBody: Swift.Decodable {
     }
 }
 
-enum DownloadDBLogFilePortionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBLogFileNotFoundFault": return try await DBLogFileNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension DownloadDBLogFilePortionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension DownloadDBLogFilePortionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: DownloadDBLogFilePortionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: DownloadDBLogFilePortionOutputBody = try responseDecoder.decode(responseBody: data)
             self.additionalDataPending = output.additionalDataPending
             self.logFileData = output.logFileData
             self.marker = output.marker
@@ -30667,7 +30656,7 @@ extension DownloadDBLogFilePortionOutputResponse: ClientRuntime.HttpResponseBind
 }
 
 /// This data type is used as a response element to DownloadDBLogFilePortion.
-public struct DownloadDBLogFilePortionOutputResponse: Swift.Equatable {
+public struct DownloadDBLogFilePortionOutput: Swift.Equatable {
     /// Boolean value that if true, indicates there is more data to be downloaded.
     public var additionalDataPending: Swift.Bool
     /// Entries from the specified log file.
@@ -30687,13 +30676,13 @@ public struct DownloadDBLogFilePortionOutputResponse: Swift.Equatable {
     }
 }
 
-struct DownloadDBLogFilePortionOutputResponseBody: Swift.Equatable {
+struct DownloadDBLogFilePortionOutputBody: Swift.Equatable {
     let logFileData: Swift.String?
     let marker: Swift.String?
     let additionalDataPending: Swift.Bool
 }
 
-extension DownloadDBLogFilePortionOutputResponseBody: Swift.Decodable {
+extension DownloadDBLogFilePortionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case additionalDataPending = "AdditionalDataPending"
         case logFileData = "LogFileData"
@@ -30709,6 +30698,17 @@ extension DownloadDBLogFilePortionOutputResponseBody: Swift.Decodable {
         marker = markerDecoded
         let additionalDataPendingDecoded = try containerValues.decodeIfPresent(Swift.Bool.self, forKey: .additionalDataPending) ?? false
         additionalDataPending = additionalDataPendingDecoded
+    }
+}
+
+enum DownloadDBLogFilePortionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBLogFileNotFoundFault": return try await DBLogFileNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -31861,23 +31861,11 @@ extension FailoverDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum FailoverDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension FailoverDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension FailoverDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: FailoverDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: FailoverDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbCluster = output.dbCluster
         } else {
             self.dbCluster = nil
@@ -31885,7 +31873,7 @@ extension FailoverDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct FailoverDBClusterOutputResponse: Swift.Equatable {
+public struct FailoverDBClusterOutput: Swift.Equatable {
     /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
     public var dbCluster: RDSClientTypes.DBCluster?
 
@@ -31897,11 +31885,11 @@ public struct FailoverDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct FailoverDBClusterOutputResponseBody: Swift.Equatable {
+struct FailoverDBClusterOutputBody: Swift.Equatable {
     let dbCluster: RDSClientTypes.DBCluster?
 }
 
-extension FailoverDBClusterOutputResponseBody: Swift.Decodable {
+extension FailoverDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbCluster = "DBCluster"
     }
@@ -31911,6 +31899,18 @@ extension FailoverDBClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("FailoverDBClusterResult"))
         let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
         dbCluster = dbClusterDecoded
+    }
+}
+
+enum FailoverDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -32000,24 +32000,11 @@ extension FailoverGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum FailoverGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension FailoverGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension FailoverGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: FailoverGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: FailoverGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -32025,7 +32012,7 @@ extension FailoverGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct FailoverGlobalClusterOutputResponse: Swift.Equatable {
+public struct FailoverGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -32037,11 +32024,11 @@ public struct FailoverGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct FailoverGlobalClusterOutputResponseBody: Swift.Equatable {
+struct FailoverGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension FailoverGlobalClusterOutputResponseBody: Swift.Decodable {
+extension FailoverGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -32051,6 +32038,19 @@ extension FailoverGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("FailoverGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum FailoverGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -34753,26 +34753,11 @@ extension ListTagsForResourceInputBody: Swift.Decodable {
     }
 }
 
-enum ListTagsForResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ListTagsForResourceOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ListTagsForResourceOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ListTagsForResourceOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ListTagsForResourceOutputBody = try responseDecoder.decode(responseBody: data)
             self.tagList = output.tagList
         } else {
             self.tagList = nil
@@ -34781,7 +34766,7 @@ extension ListTagsForResourceOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 ///
-public struct ListTagsForResourceOutputResponse: Swift.Equatable {
+public struct ListTagsForResourceOutput: Swift.Equatable {
     /// List of tags returned by the ListTagsForResource operation.
     public var tagList: [RDSClientTypes.Tag]?
 
@@ -34793,11 +34778,11 @@ public struct ListTagsForResourceOutputResponse: Swift.Equatable {
     }
 }
 
-struct ListTagsForResourceOutputResponseBody: Swift.Equatable {
+struct ListTagsForResourceOutputBody: Swift.Equatable {
     let tagList: [RDSClientTypes.Tag]?
 }
 
-extension ListTagsForResourceOutputResponseBody: Swift.Decodable {
+extension ListTagsForResourceOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case tagList = "TagList"
     }
@@ -34823,6 +34808,21 @@ extension ListTagsForResourceOutputResponseBody: Swift.Decodable {
             }
         } else {
             tagList = nil
+        }
+    }
+}
+
+enum ListTagsForResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -35032,23 +35032,11 @@ extension ModifyActivityStreamInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyActivityStreamOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyActivityStreamOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyActivityStreamOutputBody = try responseDecoder.decode(responseBody: data)
             self.engineNativeAuditFieldsIncluded = output.engineNativeAuditFieldsIncluded
             self.kinesisStreamName = output.kinesisStreamName
             self.kmsKeyId = output.kmsKeyId
@@ -35066,7 +35054,7 @@ extension ModifyActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding 
     }
 }
 
-public struct ModifyActivityStreamOutputResponse: Swift.Equatable {
+public struct ModifyActivityStreamOutput: Swift.Equatable {
     /// Indicates whether engine-native audit fields are included in the database activity stream.
     public var engineNativeAuditFieldsIncluded: Swift.Bool?
     /// The name of the Amazon Kinesis data stream to be used for the database activity stream.
@@ -35098,7 +35086,7 @@ public struct ModifyActivityStreamOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyActivityStreamOutputResponseBody: Swift.Equatable {
+struct ModifyActivityStreamOutputBody: Swift.Equatable {
     let kmsKeyId: Swift.String?
     let kinesisStreamName: Swift.String?
     let status: RDSClientTypes.ActivityStreamStatus?
@@ -35107,7 +35095,7 @@ struct ModifyActivityStreamOutputResponseBody: Swift.Equatable {
     let policyStatus: RDSClientTypes.ActivityStreamPolicyStatus?
 }
 
-extension ModifyActivityStreamOutputResponseBody: Swift.Decodable {
+extension ModifyActivityStreamOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case engineNativeAuditFieldsIncluded = "EngineNativeAuditFieldsIncluded"
         case kinesisStreamName = "KinesisStreamName"
@@ -35132,6 +35120,18 @@ extension ModifyActivityStreamOutputResponseBody: Swift.Decodable {
         engineNativeAuditFieldsIncluded = engineNativeAuditFieldsIncludedDecoded
         let policyStatusDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ActivityStreamPolicyStatus.self, forKey: .policyStatus)
         policyStatus = policyStatusDecoded
+    }
+}
+
+enum ModifyActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -35191,21 +35191,11 @@ extension ModifyCertificatesInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyCertificatesOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "CertificateNotFound": return try await CertificateNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyCertificatesOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyCertificatesOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyCertificatesOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyCertificatesOutputBody = try responseDecoder.decode(responseBody: data)
             self.certificate = output.certificate
         } else {
             self.certificate = nil
@@ -35213,7 +35203,7 @@ extension ModifyCertificatesOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyCertificatesOutputResponse: Swift.Equatable {
+public struct ModifyCertificatesOutput: Swift.Equatable {
     /// A CA certificate for an Amazon Web Services account. For more information, see [Using SSL/TLS to encrypt a connection to a DB instance](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html) in the Amazon RDS User Guide and [ Using SSL/TLS to encrypt a connection to a DB cluster](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html) in the Amazon Aurora User Guide.
     public var certificate: RDSClientTypes.Certificate?
 
@@ -35225,11 +35215,11 @@ public struct ModifyCertificatesOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyCertificatesOutputResponseBody: Swift.Equatable {
+struct ModifyCertificatesOutputBody: Swift.Equatable {
     let certificate: RDSClientTypes.Certificate?
 }
 
-extension ModifyCertificatesOutputResponseBody: Swift.Decodable {
+extension ModifyCertificatesOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case certificate = "Certificate"
     }
@@ -35239,6 +35229,16 @@ extension ModifyCertificatesOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyCertificatesResult"))
         let certificateDecoded = try containerValues.decodeIfPresent(RDSClientTypes.Certificate.self, forKey: .certificate)
         certificate = certificateDecoded
+    }
+}
+
+enum ModifyCertificatesOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "CertificateNotFound": return try await CertificateNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -35327,23 +35327,11 @@ extension ModifyCurrentDBClusterCapacityInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyCurrentDBClusterCapacityOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterCapacityFault": return try await InvalidDBClusterCapacityFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyCurrentDBClusterCapacityOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyCurrentDBClusterCapacityOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyCurrentDBClusterCapacityOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyCurrentDBClusterCapacityOutputBody = try responseDecoder.decode(responseBody: data)
             self.currentCapacity = output.currentCapacity
             self.dbClusterIdentifier = output.dbClusterIdentifier
             self.pendingCapacity = output.pendingCapacity
@@ -35359,7 +35347,7 @@ extension ModifyCurrentDBClusterCapacityOutputResponse: ClientRuntime.HttpRespon
     }
 }
 
-public struct ModifyCurrentDBClusterCapacityOutputResponse: Swift.Equatable {
+public struct ModifyCurrentDBClusterCapacityOutput: Swift.Equatable {
     /// The current capacity of the DB cluster.
     public var currentCapacity: Swift.Int?
     /// A user-supplied DB cluster identifier. This identifier is the unique key that identifies a DB cluster.
@@ -35387,7 +35375,7 @@ public struct ModifyCurrentDBClusterCapacityOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyCurrentDBClusterCapacityOutputResponseBody: Swift.Equatable {
+struct ModifyCurrentDBClusterCapacityOutputBody: Swift.Equatable {
     let dbClusterIdentifier: Swift.String?
     let pendingCapacity: Swift.Int?
     let currentCapacity: Swift.Int?
@@ -35395,7 +35383,7 @@ struct ModifyCurrentDBClusterCapacityOutputResponseBody: Swift.Equatable {
     let timeoutAction: Swift.String?
 }
 
-extension ModifyCurrentDBClusterCapacityOutputResponseBody: Swift.Decodable {
+extension ModifyCurrentDBClusterCapacityOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case currentCapacity = "CurrentCapacity"
         case dbClusterIdentifier = "DBClusterIdentifier"
@@ -35417,6 +35405,18 @@ extension ModifyCurrentDBClusterCapacityOutputResponseBody: Swift.Decodable {
         secondsBeforeTimeout = secondsBeforeTimeoutDecoded
         let timeoutActionDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .timeoutAction)
         timeoutAction = timeoutActionDecoded
+    }
+}
+
+enum ModifyCurrentDBClusterCapacityOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterCapacityFault": return try await InvalidDBClusterCapacityFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -35500,22 +35500,11 @@ extension ModifyCustomDBEngineVersionInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "CustomDBEngineVersionNotFoundFault": return try await CustomDBEngineVersionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidCustomDBEngineVersionStateFault": return try await InvalidCustomDBEngineVersionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyCustomDBEngineVersionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyCustomDBEngineVersionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyCustomDBEngineVersionOutputBody = try responseDecoder.decode(responseBody: data)
             self.createTime = output.createTime
             self.customDBEngineVersionManifest = output.customDBEngineVersionManifest
             self.databaseInstallationFilesS3BucketName = output.databaseInstallationFilesS3BucketName
@@ -35586,7 +35575,7 @@ extension ModifyCustomDBEngineVersionOutputResponse: ClientRuntime.HttpResponseB
 }
 
 /// This data type is used as a response element in the action DescribeDBEngineVersions.
-public struct ModifyCustomDBEngineVersionOutputResponse: Swift.Equatable {
+public struct ModifyCustomDBEngineVersionOutput: Swift.Equatable {
     /// The creation time of the DB engine version.
     public var createTime: ClientRuntime.Date?
     /// JSON string that lists the installation files and parameters that RDS Custom uses to create a custom engine version (CEV). RDS Custom applies the patches in the order in which they're listed in the manifest. You can set the Oracle home, Oracle base, and UNIX/Linux user and group using the installation parameters. For more information, see [JSON fields in the CEV manifest](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/custom-cev.preparing.html#custom-cev.preparing.manifest.fields) in the Amazon RDS User Guide.
@@ -35722,7 +35711,7 @@ public struct ModifyCustomDBEngineVersionOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
+struct ModifyCustomDBEngineVersionOutputBody: Swift.Equatable {
     let engine: Swift.String?
     let engineVersion: Swift.String?
     let dbParameterGroupFamily: Swift.String?
@@ -35757,7 +35746,7 @@ struct ModifyCustomDBEngineVersionOutputResponseBody: Swift.Equatable {
     let supportsLocalWriteForwarding: Swift.Bool?
 }
 
-extension ModifyCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
+extension ModifyCustomDBEngineVersionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case createTime = "CreateTime"
         case customDBEngineVersionManifest = "CustomDBEngineVersionManifest"
@@ -36016,6 +36005,17 @@ extension ModifyCustomDBEngineVersionOutputResponseBody: Swift.Decodable {
     }
 }
 
+enum ModifyCustomDBEngineVersionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "CustomDBEngineVersionNotFoundFault": return try await CustomDBEngineVersionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidCustomDBEngineVersionStateFault": return try await InvalidCustomDBEngineVersionStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
+    }
+}
+
 extension ModifyDBClusterEndpointInput: Swift.Encodable {
     public func encode(to encoder: Swift.Encoder) throws {
         var container = encoder.container(keyedBy: ClientRuntime.Key.self)
@@ -36147,25 +36147,11 @@ extension ModifyDBClusterEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterEndpointNotFoundFault": return try await DBClusterEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterEndpointStateFault": return try await InvalidDBClusterEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBClusterEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBClusterEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBClusterEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.customEndpointType = output.customEndpointType
             self.dbClusterEndpointArn = output.dbClusterEndpointArn
             self.dbClusterEndpointIdentifier = output.dbClusterEndpointIdentifier
@@ -36203,7 +36189,7 @@ extension ModifyDBClusterEndpointOutputResponse: ClientRuntime.HttpResponseBindi
 ///
 ///
 /// For the data structure that represents Amazon RDS DB instance endpoints, see Endpoint.
-public struct ModifyDBClusterEndpointOutputResponse: Swift.Equatable {
+public struct ModifyDBClusterEndpointOutput: Swift.Equatable {
     /// The type associated with a custom endpoint. One of: READER, WRITER, ANY.
     public var customEndpointType: Swift.String?
     /// The Amazon Resource Name (ARN) for the endpoint.
@@ -36251,7 +36237,7 @@ public struct ModifyDBClusterEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBClusterEndpointOutputResponseBody: Swift.Equatable {
+struct ModifyDBClusterEndpointOutputBody: Swift.Equatable {
     let dbClusterEndpointIdentifier: Swift.String?
     let dbClusterIdentifier: Swift.String?
     let dbClusterEndpointResourceIdentifier: Swift.String?
@@ -36264,7 +36250,7 @@ struct ModifyDBClusterEndpointOutputResponseBody: Swift.Equatable {
     let dbClusterEndpointArn: Swift.String?
 }
 
-extension ModifyDBClusterEndpointOutputResponseBody: Swift.Decodable {
+extension ModifyDBClusterEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case customEndpointType = "CustomEndpointType"
         case dbClusterEndpointArn = "DBClusterEndpointArn"
@@ -36335,6 +36321,20 @@ extension ModifyDBClusterEndpointOutputResponseBody: Swift.Decodable {
         }
         let dbClusterEndpointArnDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbClusterEndpointArn)
         dbClusterEndpointArn = dbClusterEndpointArnDecoded
+    }
+}
+
+enum ModifyDBClusterEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterEndpointNotFoundFault": return try await DBClusterEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterEndpointStateFault": return try await InvalidDBClusterEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -36960,6 +36960,47 @@ extension ModifyDBClusterInputBody: Swift.Decodable {
     }
 }
 
+extension ModifyDBClusterOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: ModifyDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct ModifyDBClusterOutput: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct ModifyDBClusterOutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension ModifyDBClusterOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBClusterResult"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum ModifyDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -36980,47 +37021,6 @@ enum ModifyDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "StorageTypeNotAvailableFault": return try await StorageTypeNotAvailableFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension ModifyDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: ModifyDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct ModifyDBClusterOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct ModifyDBClusterOutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension ModifyDBClusterOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBClusterResult"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -37109,22 +37109,11 @@ extension ModifyDBClusterParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBClusterParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBClusterParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBClusterParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterParameterGroupName = output.dbClusterParameterGroupName
         } else {
             self.dbClusterParameterGroupName = nil
@@ -37133,7 +37122,7 @@ extension ModifyDBClusterParameterGroupOutputResponse: ClientRuntime.HttpRespons
 }
 
 ///
-public struct ModifyDBClusterParameterGroupOutputResponse: Swift.Equatable {
+public struct ModifyDBClusterParameterGroupOutput: Swift.Equatable {
     /// The name of the DB cluster parameter group. Constraints:
     ///
     /// * Must be 1 to 255 letters or numbers.
@@ -37154,11 +37143,11 @@ public struct ModifyDBClusterParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBClusterParameterGroupOutputResponseBody: Swift.Equatable {
+struct ModifyDBClusterParameterGroupOutputBody: Swift.Equatable {
     let dbClusterParameterGroupName: Swift.String?
 }
 
-extension ModifyDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
+extension ModifyDBClusterParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterParameterGroupName = "DBClusterParameterGroupName"
     }
@@ -37168,6 +37157,17 @@ extension ModifyDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBClusterParameterGroupResult"))
         let dbClusterParameterGroupNameDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbClusterParameterGroupName)
         dbClusterParameterGroupName = dbClusterParameterGroupNameDecoded
+    }
+}
+
+enum ModifyDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -37304,23 +37304,11 @@ extension ModifyDBClusterSnapshotAttributeInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBClusterSnapshotAttributeOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SharedSnapshotQuotaExceeded": return try await SharedSnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBClusterSnapshotAttributeOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBClusterSnapshotAttributeOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBClusterSnapshotAttributeOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBClusterSnapshotAttributeOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterSnapshotAttributesResult = output.dbClusterSnapshotAttributesResult
         } else {
             self.dbClusterSnapshotAttributesResult = nil
@@ -37328,7 +37316,7 @@ extension ModifyDBClusterSnapshotAttributeOutputResponse: ClientRuntime.HttpResp
     }
 }
 
-public struct ModifyDBClusterSnapshotAttributeOutputResponse: Swift.Equatable {
+public struct ModifyDBClusterSnapshotAttributeOutput: Swift.Equatable {
     /// Contains the results of a successful call to the DescribeDBClusterSnapshotAttributes API action. Manual DB cluster snapshot attributes are used to authorize other Amazon Web Services accounts to copy or restore a manual DB cluster snapshot. For more information, see the ModifyDBClusterSnapshotAttribute API action.
     public var dbClusterSnapshotAttributesResult: RDSClientTypes.DBClusterSnapshotAttributesResult?
 
@@ -37340,11 +37328,11 @@ public struct ModifyDBClusterSnapshotAttributeOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBClusterSnapshotAttributeOutputResponseBody: Swift.Equatable {
+struct ModifyDBClusterSnapshotAttributeOutputBody: Swift.Equatable {
     let dbClusterSnapshotAttributesResult: RDSClientTypes.DBClusterSnapshotAttributesResult?
 }
 
-extension ModifyDBClusterSnapshotAttributeOutputResponseBody: Swift.Decodable {
+extension ModifyDBClusterSnapshotAttributeOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterSnapshotAttributesResult = "DBClusterSnapshotAttributesResult"
     }
@@ -37354,6 +37342,18 @@ extension ModifyDBClusterSnapshotAttributeOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBClusterSnapshotAttributeResult"))
         let dbClusterSnapshotAttributesResultDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBClusterSnapshotAttributesResult.self, forKey: .dbClusterSnapshotAttributesResult)
         dbClusterSnapshotAttributesResult = dbClusterSnapshotAttributesResultDecoded
+    }
+}
+
+enum ModifyDBClusterSnapshotAttributeOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterSnapshotStateFault": return try await InvalidDBClusterSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SharedSnapshotQuotaExceeded": return try await SharedSnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -38322,6 +38322,47 @@ extension ModifyDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension ModifyDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: ModifyDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct ModifyDBInstanceOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct ModifyDBInstanceOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension ModifyDBInstanceOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBInstanceResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum ModifyDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -38348,47 +38389,6 @@ enum ModifyDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension ModifyDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: ModifyDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct ModifyDBInstanceOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct ModifyDBInstanceOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension ModifyDBInstanceOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBInstanceResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -38479,22 +38479,11 @@ extension ModifyDBParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbParameterGroupName = output.dbParameterGroupName
         } else {
             self.dbParameterGroupName = nil
@@ -38503,7 +38492,7 @@ extension ModifyDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBindin
 }
 
 /// Contains the result of a successful invocation of the ModifyDBParameterGroup or ResetDBParameterGroup action.
-public struct ModifyDBParameterGroupOutputResponse: Swift.Equatable {
+public struct ModifyDBParameterGroupOutput: Swift.Equatable {
     /// The name of the DB parameter group.
     public var dbParameterGroupName: Swift.String?
 
@@ -38515,11 +38504,11 @@ public struct ModifyDBParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBParameterGroupOutputResponseBody: Swift.Equatable {
+struct ModifyDBParameterGroupOutputBody: Swift.Equatable {
     let dbParameterGroupName: Swift.String?
 }
 
-extension ModifyDBParameterGroupOutputResponseBody: Swift.Decodable {
+extension ModifyDBParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbParameterGroupName = "DBParameterGroupName"
     }
@@ -38529,6 +38518,17 @@ extension ModifyDBParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBParameterGroupResult"))
         let dbParameterGroupNameDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbParameterGroupName)
         dbParameterGroupName = dbParameterGroupNameDecoded
+    }
+}
+
+enum ModifyDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -38626,24 +38626,11 @@ extension ModifyDBProxyEndpointInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyEndpointAlreadyExistsFault": return try await DBProxyEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyEndpointStateFault": return try await InvalidDBProxyEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBProxyEndpointOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBProxyEndpointOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBProxyEndpointOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyEndpoint = output.dbProxyEndpoint
         } else {
             self.dbProxyEndpoint = nil
@@ -38651,7 +38638,7 @@ extension ModifyDBProxyEndpointOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct ModifyDBProxyEndpointOutputResponse: Swift.Equatable {
+public struct ModifyDBProxyEndpointOutput: Swift.Equatable {
     /// The DBProxyEndpoint object representing the new settings for the DB proxy endpoint.
     public var dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 
@@ -38663,11 +38650,11 @@ public struct ModifyDBProxyEndpointOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBProxyEndpointOutputResponseBody: Swift.Equatable {
+struct ModifyDBProxyEndpointOutputBody: Swift.Equatable {
     let dbProxyEndpoint: RDSClientTypes.DBProxyEndpoint?
 }
 
-extension ModifyDBProxyEndpointOutputResponseBody: Swift.Decodable {
+extension ModifyDBProxyEndpointOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyEndpoint = "DBProxyEndpoint"
     }
@@ -38677,6 +38664,19 @@ extension ModifyDBProxyEndpointOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBProxyEndpointResult"))
         let dbProxyEndpointDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxyEndpoint.self, forKey: .dbProxyEndpoint)
         dbProxyEndpoint = dbProxyEndpointDecoded
+    }
+}
+
+enum ModifyDBProxyEndpointOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyEndpointAlreadyExistsFault": return try await DBProxyEndpointAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyEndpointNotFoundFault": return try await DBProxyEndpointNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyEndpointStateFault": return try await InvalidDBProxyEndpointStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -38855,23 +38855,11 @@ extension ModifyDBProxyInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyAlreadyExistsFault": return try await DBProxyAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBProxyOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBProxyOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBProxyOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxy = output.dbProxy
         } else {
             self.dbProxy = nil
@@ -38879,7 +38867,7 @@ extension ModifyDBProxyOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyDBProxyOutputResponse: Swift.Equatable {
+public struct ModifyDBProxyOutput: Swift.Equatable {
     /// The DBProxy object representing the new settings for the proxy.
     public var dbProxy: RDSClientTypes.DBProxy?
 
@@ -38891,11 +38879,11 @@ public struct ModifyDBProxyOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBProxyOutputResponseBody: Swift.Equatable {
+struct ModifyDBProxyOutputBody: Swift.Equatable {
     let dbProxy: RDSClientTypes.DBProxy?
 }
 
-extension ModifyDBProxyOutputResponseBody: Swift.Decodable {
+extension ModifyDBProxyOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxy = "DBProxy"
     }
@@ -38905,6 +38893,18 @@ extension ModifyDBProxyOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBProxyResult"))
         let dbProxyDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxy.self, forKey: .dbProxy)
         dbProxy = dbProxyDecoded
+    }
+}
+
+enum ModifyDBProxyOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyAlreadyExistsFault": return try await DBProxyAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -38988,23 +38988,11 @@ extension ModifyDBProxyTargetGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBProxyTargetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBProxyTargetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBProxyTargetGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBProxyTargetGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBProxyTargetGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyTargetGroup = output.dbProxyTargetGroup
         } else {
             self.dbProxyTargetGroup = nil
@@ -39012,7 +39000,7 @@ extension ModifyDBProxyTargetGroupOutputResponse: ClientRuntime.HttpResponseBind
     }
 }
 
-public struct ModifyDBProxyTargetGroupOutputResponse: Swift.Equatable {
+public struct ModifyDBProxyTargetGroupOutput: Swift.Equatable {
     /// The settings of the modified DBProxyTarget.
     public var dbProxyTargetGroup: RDSClientTypes.DBProxyTargetGroup?
 
@@ -39024,11 +39012,11 @@ public struct ModifyDBProxyTargetGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBProxyTargetGroupOutputResponseBody: Swift.Equatable {
+struct ModifyDBProxyTargetGroupOutputBody: Swift.Equatable {
     let dbProxyTargetGroup: RDSClientTypes.DBProxyTargetGroup?
 }
 
-extension ModifyDBProxyTargetGroupOutputResponseBody: Swift.Decodable {
+extension ModifyDBProxyTargetGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyTargetGroup = "DBProxyTargetGroup"
     }
@@ -39038,6 +39026,18 @@ extension ModifyDBProxyTargetGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBProxyTargetGroupResult"))
         let dbProxyTargetGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBProxyTargetGroup.self, forKey: .dbProxyTargetGroup)
         dbProxyTargetGroup = dbProxyTargetGroupDecoded
+    }
+}
+
+enum ModifyDBProxyTargetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -39174,23 +39174,11 @@ extension ModifyDBSnapshotAttributeInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBSnapshotAttributeOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBSnapshotState": return try await InvalidDBSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SharedSnapshotQuotaExceeded": return try await SharedSnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBSnapshotAttributeOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBSnapshotAttributeOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBSnapshotAttributeOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBSnapshotAttributeOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshotAttributesResult = output.dbSnapshotAttributesResult
         } else {
             self.dbSnapshotAttributesResult = nil
@@ -39198,7 +39186,7 @@ extension ModifyDBSnapshotAttributeOutputResponse: ClientRuntime.HttpResponseBin
     }
 }
 
-public struct ModifyDBSnapshotAttributeOutputResponse: Swift.Equatable {
+public struct ModifyDBSnapshotAttributeOutput: Swift.Equatable {
     /// Contains the results of a successful call to the DescribeDBSnapshotAttributes API action. Manual DB snapshot attributes are used to authorize other Amazon Web Services accounts to copy or restore a manual DB snapshot. For more information, see the ModifyDBSnapshotAttribute API action.
     public var dbSnapshotAttributesResult: RDSClientTypes.DBSnapshotAttributesResult?
 
@@ -39210,11 +39198,11 @@ public struct ModifyDBSnapshotAttributeOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBSnapshotAttributeOutputResponseBody: Swift.Equatable {
+struct ModifyDBSnapshotAttributeOutputBody: Swift.Equatable {
     let dbSnapshotAttributesResult: RDSClientTypes.DBSnapshotAttributesResult?
 }
 
-extension ModifyDBSnapshotAttributeOutputResponseBody: Swift.Decodable {
+extension ModifyDBSnapshotAttributeOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshotAttributesResult = "DBSnapshotAttributesResult"
     }
@@ -39224,6 +39212,18 @@ extension ModifyDBSnapshotAttributeOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBSnapshotAttributeResult"))
         let dbSnapshotAttributesResultDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshotAttributesResult.self, forKey: .dbSnapshotAttributesResult)
         dbSnapshotAttributesResult = dbSnapshotAttributesResultDecoded
+    }
+}
+
+enum ModifyDBSnapshotAttributeOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBSnapshotState": return try await InvalidDBSnapshotStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SharedSnapshotQuotaExceeded": return try await SharedSnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -39313,21 +39313,11 @@ extension ModifyDBSnapshotInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBSnapshotOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSnapshot = output.dbSnapshot
         } else {
             self.dbSnapshot = nil
@@ -39335,7 +39325,7 @@ extension ModifyDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyDBSnapshotOutputResponse: Swift.Equatable {
+public struct ModifyDBSnapshotOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB snapshot. This data type is used as a response element in the DescribeDBSnapshots action.
     public var dbSnapshot: RDSClientTypes.DBSnapshot?
 
@@ -39347,11 +39337,11 @@ public struct ModifyDBSnapshotOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBSnapshotOutputResponseBody: Swift.Equatable {
+struct ModifyDBSnapshotOutputBody: Swift.Equatable {
     let dbSnapshot: RDSClientTypes.DBSnapshot?
 }
 
-extension ModifyDBSnapshotOutputResponseBody: Swift.Decodable {
+extension ModifyDBSnapshotOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSnapshot = "DBSnapshot"
     }
@@ -39361,6 +39351,16 @@ extension ModifyDBSnapshotOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBSnapshotResult"))
         let dbSnapshotDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSnapshot.self, forKey: .dbSnapshot)
         dbSnapshot = dbSnapshotDecoded
+    }
+}
+
+enum ModifyDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -39460,25 +39460,11 @@ extension ModifyDBSubnetGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBSubnetGroupDoesNotCoverEnoughAZs": return try await DBSubnetGroupDoesNotCoverEnoughAZs(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSubnetGroupNotFoundFault": return try await DBSubnetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSubnetQuotaExceededFault": return try await DBSubnetQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SubnetAlreadyInUse": return try await SubnetAlreadyInUse(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyDBSubnetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyDBSubnetGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyDBSubnetGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyDBSubnetGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSubnetGroup = output.dbSubnetGroup
         } else {
             self.dbSubnetGroup = nil
@@ -39486,7 +39472,7 @@ extension ModifyDBSubnetGroupOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyDBSubnetGroupOutputResponse: Swift.Equatable {
+public struct ModifyDBSubnetGroupOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB subnet group. This data type is used as a response element in the DescribeDBSubnetGroups action.
     public var dbSubnetGroup: RDSClientTypes.DBSubnetGroup?
 
@@ -39498,11 +39484,11 @@ public struct ModifyDBSubnetGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyDBSubnetGroupOutputResponseBody: Swift.Equatable {
+struct ModifyDBSubnetGroupOutputBody: Swift.Equatable {
     let dbSubnetGroup: RDSClientTypes.DBSubnetGroup?
 }
 
-extension ModifyDBSubnetGroupOutputResponseBody: Swift.Decodable {
+extension ModifyDBSubnetGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSubnetGroup = "DBSubnetGroup"
     }
@@ -39512,6 +39498,20 @@ extension ModifyDBSubnetGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyDBSubnetGroupResult"))
         let dbSubnetGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSubnetGroup.self, forKey: .dbSubnetGroup)
         dbSubnetGroup = dbSubnetGroupDecoded
+    }
+}
+
+enum ModifyDBSubnetGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBSubnetGroupDoesNotCoverEnoughAZs": return try await DBSubnetGroupDoesNotCoverEnoughAZs(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSubnetGroupNotFoundFault": return try await DBSubnetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSubnetQuotaExceededFault": return try await DBSubnetQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidSubnet": return try await InvalidSubnet(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SubnetAlreadyInUse": return try await SubnetAlreadyInUse(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -39632,6 +39632,47 @@ extension ModifyEventSubscriptionInputBody: Swift.Decodable {
     }
 }
 
+extension ModifyEventSubscriptionOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: ModifyEventSubscriptionOutputBody = try responseDecoder.decode(responseBody: data)
+            self.eventSubscription = output.eventSubscription
+        } else {
+            self.eventSubscription = nil
+        }
+    }
+}
+
+public struct ModifyEventSubscriptionOutput: Swift.Equatable {
+    /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
+    public var eventSubscription: RDSClientTypes.EventSubscription?
+
+    public init(
+        eventSubscription: RDSClientTypes.EventSubscription? = nil
+    )
+    {
+        self.eventSubscription = eventSubscription
+    }
+}
+
+struct ModifyEventSubscriptionOutputBody: Swift.Equatable {
+    let eventSubscription: RDSClientTypes.EventSubscription?
+}
+
+extension ModifyEventSubscriptionOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case eventSubscription = "EventSubscription"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyEventSubscriptionResult"))
+        let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
+        eventSubscription = eventSubscriptionDecoded
+    }
+}
+
 enum ModifyEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -39644,47 +39685,6 @@ enum ModifyEventSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding 
             case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension ModifyEventSubscriptionOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: ModifyEventSubscriptionOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.eventSubscription = output.eventSubscription
-        } else {
-            self.eventSubscription = nil
-        }
-    }
-}
-
-public struct ModifyEventSubscriptionOutputResponse: Swift.Equatable {
-    /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
-    public var eventSubscription: RDSClientTypes.EventSubscription?
-
-    public init(
-        eventSubscription: RDSClientTypes.EventSubscription? = nil
-    )
-    {
-        self.eventSubscription = eventSubscription
-    }
-}
-
-struct ModifyEventSubscriptionOutputResponseBody: Swift.Equatable {
-    let eventSubscription: RDSClientTypes.EventSubscription?
-}
-
-extension ModifyEventSubscriptionOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case eventSubscription = "EventSubscription"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyEventSubscriptionResult"))
-        let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
-        eventSubscription = eventSubscriptionDecoded
     }
 }
 
@@ -39788,24 +39788,11 @@ extension ModifyGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -39813,7 +39800,7 @@ extension ModifyGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyGlobalClusterOutputResponse: Swift.Equatable {
+public struct ModifyGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -39825,11 +39812,11 @@ public struct ModifyGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyGlobalClusterOutputResponseBody: Swift.Equatable {
+struct ModifyGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension ModifyGlobalClusterOutputResponseBody: Swift.Decodable {
+extension ModifyGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -39839,6 +39826,19 @@ extension ModifyGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum ModifyGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -39974,22 +39974,11 @@ extension ModifyOptionGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ModifyOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "InvalidOptionGroupStateFault": return try await InvalidOptionGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ModifyOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ModifyOptionGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ModifyOptionGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ModifyOptionGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.optionGroup = output.optionGroup
         } else {
             self.optionGroup = nil
@@ -39997,7 +39986,7 @@ extension ModifyOptionGroupOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct ModifyOptionGroupOutputResponse: Swift.Equatable {
+public struct ModifyOptionGroupOutput: Swift.Equatable {
     ///
     public var optionGroup: RDSClientTypes.OptionGroup?
 
@@ -40009,11 +39998,11 @@ public struct ModifyOptionGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ModifyOptionGroupOutputResponseBody: Swift.Equatable {
+struct ModifyOptionGroupOutputBody: Swift.Equatable {
     let optionGroup: RDSClientTypes.OptionGroup?
 }
 
-extension ModifyOptionGroupOutputResponseBody: Swift.Decodable {
+extension ModifyOptionGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case optionGroup = "OptionGroup"
     }
@@ -40023,6 +40012,17 @@ extension ModifyOptionGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ModifyOptionGroupResult"))
         let optionGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.OptionGroup.self, forKey: .optionGroup)
         optionGroup = optionGroupDecoded
+    }
+}
+
+enum ModifyOptionGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "InvalidOptionGroupStateFault": return try await InvalidOptionGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "OptionGroupNotFoundFault": return try await OptionGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -42711,22 +42711,11 @@ extension PromoteReadReplicaDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum PromoteReadReplicaDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension PromoteReadReplicaDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension PromoteReadReplicaDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: PromoteReadReplicaDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: PromoteReadReplicaDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbCluster = output.dbCluster
         } else {
             self.dbCluster = nil
@@ -42734,7 +42723,7 @@ extension PromoteReadReplicaDBClusterOutputResponse: ClientRuntime.HttpResponseB
     }
 }
 
-public struct PromoteReadReplicaDBClusterOutputResponse: Swift.Equatable {
+public struct PromoteReadReplicaDBClusterOutput: Swift.Equatable {
     /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
     public var dbCluster: RDSClientTypes.DBCluster?
 
@@ -42746,11 +42735,11 @@ public struct PromoteReadReplicaDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct PromoteReadReplicaDBClusterOutputResponseBody: Swift.Equatable {
+struct PromoteReadReplicaDBClusterOutputBody: Swift.Equatable {
     let dbCluster: RDSClientTypes.DBCluster?
 }
 
-extension PromoteReadReplicaDBClusterOutputResponseBody: Swift.Decodable {
+extension PromoteReadReplicaDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbCluster = "DBCluster"
     }
@@ -42760,6 +42749,17 @@ extension PromoteReadReplicaDBClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("PromoteReadReplicaDBClusterResult"))
         let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
         dbCluster = dbClusterDecoded
+    }
+}
+
+enum PromoteReadReplicaDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -42849,22 +42849,11 @@ extension PromoteReadReplicaInputBody: Swift.Decodable {
     }
 }
 
-enum PromoteReadReplicaOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension PromoteReadReplicaOutputResponse: ClientRuntime.HttpResponseBinding {
+extension PromoteReadReplicaOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: PromoteReadReplicaOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: PromoteReadReplicaOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstance = output.dbInstance
         } else {
             self.dbInstance = nil
@@ -42872,7 +42861,7 @@ extension PromoteReadReplicaOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct PromoteReadReplicaOutputResponse: Swift.Equatable {
+public struct PromoteReadReplicaOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
     public var dbInstance: RDSClientTypes.DBInstance?
 
@@ -42884,11 +42873,11 @@ public struct PromoteReadReplicaOutputResponse: Swift.Equatable {
     }
 }
 
-struct PromoteReadReplicaOutputResponseBody: Swift.Equatable {
+struct PromoteReadReplicaOutputBody: Swift.Equatable {
     let dbInstance: RDSClientTypes.DBInstance?
 }
 
-extension PromoteReadReplicaOutputResponseBody: Swift.Decodable {
+extension PromoteReadReplicaOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstance = "DBInstance"
     }
@@ -42898,6 +42887,17 @@ extension PromoteReadReplicaOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("PromoteReadReplicaResult"))
         let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
         dbInstance = dbInstanceDecoded
+    }
+}
+
+enum PromoteReadReplicaOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -43061,23 +43061,11 @@ extension PurchaseReservedDBInstancesOfferingInputBody: Swift.Decodable {
     }
 }
 
-enum PurchaseReservedDBInstancesOfferingOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "ReservedDBInstanceAlreadyExists": return try await ReservedDBInstanceAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ReservedDBInstanceQuotaExceeded": return try await ReservedDBInstanceQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ReservedDBInstancesOfferingNotFound": return try await ReservedDBInstancesOfferingNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension PurchaseReservedDBInstancesOfferingOutputResponse: ClientRuntime.HttpResponseBinding {
+extension PurchaseReservedDBInstancesOfferingOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: PurchaseReservedDBInstancesOfferingOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: PurchaseReservedDBInstancesOfferingOutputBody = try responseDecoder.decode(responseBody: data)
             self.reservedDBInstance = output.reservedDBInstance
         } else {
             self.reservedDBInstance = nil
@@ -43085,7 +43073,7 @@ extension PurchaseReservedDBInstancesOfferingOutputResponse: ClientRuntime.HttpR
     }
 }
 
-public struct PurchaseReservedDBInstancesOfferingOutputResponse: Swift.Equatable {
+public struct PurchaseReservedDBInstancesOfferingOutput: Swift.Equatable {
     /// This data type is used as a response element in the DescribeReservedDBInstances and PurchaseReservedDBInstancesOffering actions.
     public var reservedDBInstance: RDSClientTypes.ReservedDBInstance?
 
@@ -43097,11 +43085,11 @@ public struct PurchaseReservedDBInstancesOfferingOutputResponse: Swift.Equatable
     }
 }
 
-struct PurchaseReservedDBInstancesOfferingOutputResponseBody: Swift.Equatable {
+struct PurchaseReservedDBInstancesOfferingOutputBody: Swift.Equatable {
     let reservedDBInstance: RDSClientTypes.ReservedDBInstance?
 }
 
-extension PurchaseReservedDBInstancesOfferingOutputResponseBody: Swift.Decodable {
+extension PurchaseReservedDBInstancesOfferingOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case reservedDBInstance = "ReservedDBInstance"
     }
@@ -43111,6 +43099,18 @@ extension PurchaseReservedDBInstancesOfferingOutputResponseBody: Swift.Decodable
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("PurchaseReservedDBInstancesOfferingResult"))
         let reservedDBInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ReservedDBInstance.self, forKey: .reservedDBInstance)
         reservedDBInstance = reservedDBInstanceDecoded
+    }
+}
+
+enum PurchaseReservedDBInstancesOfferingOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "ReservedDBInstanceAlreadyExists": return try await ReservedDBInstanceAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ReservedDBInstanceQuotaExceeded": return try await ReservedDBInstanceQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ReservedDBInstancesOfferingNotFound": return try await ReservedDBInstancesOfferingNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -43217,23 +43217,11 @@ extension RebootDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum RebootDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RebootDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RebootDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RebootDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RebootDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbCluster = output.dbCluster
         } else {
             self.dbCluster = nil
@@ -43241,7 +43229,7 @@ extension RebootDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct RebootDBClusterOutputResponse: Swift.Equatable {
+public struct RebootDBClusterOutput: Swift.Equatable {
     /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
     public var dbCluster: RDSClientTypes.DBCluster?
 
@@ -43253,11 +43241,11 @@ public struct RebootDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct RebootDBClusterOutputResponseBody: Swift.Equatable {
+struct RebootDBClusterOutputBody: Swift.Equatable {
     let dbCluster: RDSClientTypes.DBCluster?
 }
 
-extension RebootDBClusterOutputResponseBody: Swift.Decodable {
+extension RebootDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbCluster = "DBCluster"
     }
@@ -43267,6 +43255,18 @@ extension RebootDBClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RebootDBClusterResult"))
         let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
         dbCluster = dbClusterDecoded
+    }
+}
+
+enum RebootDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -43330,22 +43330,11 @@ extension RebootDBInstanceInputBody: Swift.Decodable {
     }
 }
 
-enum RebootDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RebootDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RebootDBInstanceOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RebootDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RebootDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstance = output.dbInstance
         } else {
             self.dbInstance = nil
@@ -43353,7 +43342,7 @@ extension RebootDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct RebootDBInstanceOutputResponse: Swift.Equatable {
+public struct RebootDBInstanceOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
     public var dbInstance: RDSClientTypes.DBInstance?
 
@@ -43365,11 +43354,11 @@ public struct RebootDBInstanceOutputResponse: Swift.Equatable {
     }
 }
 
-struct RebootDBInstanceOutputResponseBody: Swift.Equatable {
+struct RebootDBInstanceOutputBody: Swift.Equatable {
     let dbInstance: RDSClientTypes.DBInstance?
 }
 
-extension RebootDBInstanceOutputResponseBody: Swift.Decodable {
+extension RebootDBInstanceOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstance = "DBInstance"
     }
@@ -43379,6 +43368,17 @@ extension RebootDBInstanceOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RebootDBInstanceResult"))
         let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
         dbInstance = dbInstanceDecoded
+    }
+}
+
+enum RebootDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -43558,29 +43558,11 @@ extension RegisterDBProxyTargetsInputBody: Swift.Decodable {
     }
 }
 
-enum RegisterDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetAlreadyRegisteredFault": return try await DBProxyTargetAlreadyRegisteredFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InsufficientAvailableIPsInSubnetFault": return try await InsufficientAvailableIPsInSubnetFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RegisterDBProxyTargetsOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RegisterDBProxyTargetsOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RegisterDBProxyTargetsOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RegisterDBProxyTargetsOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbProxyTargets = output.dbProxyTargets
         } else {
             self.dbProxyTargets = nil
@@ -43588,7 +43570,7 @@ extension RegisterDBProxyTargetsOutputResponse: ClientRuntime.HttpResponseBindin
     }
 }
 
-public struct RegisterDBProxyTargetsOutputResponse: Swift.Equatable {
+public struct RegisterDBProxyTargetsOutput: Swift.Equatable {
     /// One or more DBProxyTarget objects that are created when you register targets with a target group.
     public var dbProxyTargets: [RDSClientTypes.DBProxyTarget]?
 
@@ -43600,11 +43582,11 @@ public struct RegisterDBProxyTargetsOutputResponse: Swift.Equatable {
     }
 }
 
-struct RegisterDBProxyTargetsOutputResponseBody: Swift.Equatable {
+struct RegisterDBProxyTargetsOutputBody: Swift.Equatable {
     let dbProxyTargets: [RDSClientTypes.DBProxyTarget]?
 }
 
-extension RegisterDBProxyTargetsOutputResponseBody: Swift.Decodable {
+extension RegisterDBProxyTargetsOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbProxyTargets = "DBProxyTargets"
     }
@@ -43630,6 +43612,24 @@ extension RegisterDBProxyTargetsOutputResponseBody: Swift.Decodable {
             }
         } else {
             dbProxyTargets = nil
+        }
+    }
+}
+
+enum RegisterDBProxyTargetsOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyNotFoundFault": return try await DBProxyNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetAlreadyRegisteredFault": return try await DBProxyTargetAlreadyRegisteredFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBProxyTargetGroupNotFoundFault": return try await DBProxyTargetGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InsufficientAvailableIPsInSubnetFault": return try await InsufficientAvailableIPsInSubnetFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBProxyStateFault": return try await InvalidDBProxyStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
 }
@@ -43690,23 +43690,11 @@ extension RemoveFromGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum RemoveFromGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RemoveFromGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RemoveFromGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RemoveFromGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RemoveFromGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -43714,7 +43702,7 @@ extension RemoveFromGlobalClusterOutputResponse: ClientRuntime.HttpResponseBindi
     }
 }
 
-public struct RemoveFromGlobalClusterOutputResponse: Swift.Equatable {
+public struct RemoveFromGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -43726,11 +43714,11 @@ public struct RemoveFromGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct RemoveFromGlobalClusterOutputResponseBody: Swift.Equatable {
+struct RemoveFromGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension RemoveFromGlobalClusterOutputResponseBody: Swift.Decodable {
+extension RemoveFromGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -43740,6 +43728,18 @@ extension RemoveFromGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RemoveFromGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum RemoveFromGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -43812,6 +43812,16 @@ extension RemoveRoleFromDBClusterInputBody: Swift.Decodable {
     }
 }
 
+extension RemoveRoleFromDBClusterOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct RemoveRoleFromDBClusterOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum RemoveRoleFromDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -43822,16 +43832,6 @@ enum RemoveRoleFromDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding 
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension RemoveRoleFromDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct RemoveRoleFromDBClusterOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension RemoveRoleFromDBInstanceInput: Swift.Encodable {
@@ -43904,6 +43904,16 @@ extension RemoveRoleFromDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension RemoveRoleFromDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct RemoveRoleFromDBInstanceOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum RemoveRoleFromDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -43914,16 +43924,6 @@ enum RemoveRoleFromDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension RemoveRoleFromDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct RemoveRoleFromDBInstanceOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension RemoveSourceIdentifierFromSubscriptionInput: Swift.Encodable {
@@ -43985,22 +43985,11 @@ extension RemoveSourceIdentifierFromSubscriptionInputBody: Swift.Decodable {
     }
 }
 
-enum RemoveSourceIdentifierFromSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "SourceNotFound": return try await SourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RemoveSourceIdentifierFromSubscriptionOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RemoveSourceIdentifierFromSubscriptionOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RemoveSourceIdentifierFromSubscriptionOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RemoveSourceIdentifierFromSubscriptionOutputBody = try responseDecoder.decode(responseBody: data)
             self.eventSubscription = output.eventSubscription
         } else {
             self.eventSubscription = nil
@@ -44008,7 +43997,7 @@ extension RemoveSourceIdentifierFromSubscriptionOutputResponse: ClientRuntime.Ht
     }
 }
 
-public struct RemoveSourceIdentifierFromSubscriptionOutputResponse: Swift.Equatable {
+public struct RemoveSourceIdentifierFromSubscriptionOutput: Swift.Equatable {
     /// Contains the results of a successful invocation of the DescribeEventSubscriptions action.
     public var eventSubscription: RDSClientTypes.EventSubscription?
 
@@ -44020,11 +44009,11 @@ public struct RemoveSourceIdentifierFromSubscriptionOutputResponse: Swift.Equata
     }
 }
 
-struct RemoveSourceIdentifierFromSubscriptionOutputResponseBody: Swift.Equatable {
+struct RemoveSourceIdentifierFromSubscriptionOutputBody: Swift.Equatable {
     let eventSubscription: RDSClientTypes.EventSubscription?
 }
 
-extension RemoveSourceIdentifierFromSubscriptionOutputResponseBody: Swift.Decodable {
+extension RemoveSourceIdentifierFromSubscriptionOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case eventSubscription = "EventSubscription"
     }
@@ -44034,6 +44023,17 @@ extension RemoveSourceIdentifierFromSubscriptionOutputResponseBody: Swift.Decoda
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RemoveSourceIdentifierFromSubscriptionResult"))
         let eventSubscriptionDecoded = try containerValues.decodeIfPresent(RDSClientTypes.EventSubscription.self, forKey: .eventSubscription)
         eventSubscription = eventSubscriptionDecoded
+    }
+}
+
+enum RemoveSourceIdentifierFromSubscriptionOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "SourceNotFound": return try await SourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SubscriptionNotFound": return try await SubscriptionNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -44122,6 +44122,16 @@ extension RemoveTagsFromResourceInputBody: Swift.Decodable {
     }
 }
 
+extension RemoveTagsFromResourceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+    }
+}
+
+public struct RemoveTagsFromResourceOutput: Swift.Equatable {
+
+    public init() { }
+}
+
 enum RemoveTagsFromResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -44135,16 +44145,6 @@ enum RemoveTagsFromResourceOutputError: ClientRuntime.HttpResponseErrorBinding {
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
     }
-}
-
-extension RemoveTagsFromResourceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-    }
-}
-
-public struct RemoveTagsFromResourceOutputResponse: Swift.Equatable {
-
-    public init() { }
 }
 
 extension RDSClientTypes {
@@ -44852,22 +44852,11 @@ extension ResetDBClusterParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ResetDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ResetDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ResetDBClusterParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ResetDBClusterParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ResetDBClusterParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbClusterParameterGroupName = output.dbClusterParameterGroupName
         } else {
             self.dbClusterParameterGroupName = nil
@@ -44876,7 +44865,7 @@ extension ResetDBClusterParameterGroupOutputResponse: ClientRuntime.HttpResponse
 }
 
 ///
-public struct ResetDBClusterParameterGroupOutputResponse: Swift.Equatable {
+public struct ResetDBClusterParameterGroupOutput: Swift.Equatable {
     /// The name of the DB cluster parameter group. Constraints:
     ///
     /// * Must be 1 to 255 letters or numbers.
@@ -44897,11 +44886,11 @@ public struct ResetDBClusterParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ResetDBClusterParameterGroupOutputResponseBody: Swift.Equatable {
+struct ResetDBClusterParameterGroupOutputBody: Swift.Equatable {
     let dbClusterParameterGroupName: Swift.String?
 }
 
-extension ResetDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
+extension ResetDBClusterParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbClusterParameterGroupName = "DBClusterParameterGroupName"
     }
@@ -44911,6 +44900,17 @@ extension ResetDBClusterParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ResetDBClusterParameterGroupResult"))
         let dbClusterParameterGroupNameDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbClusterParameterGroupName)
         dbClusterParameterGroupName = dbClusterParameterGroupNameDecoded
+    }
+}
+
+enum ResetDBClusterParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -45011,22 +45011,11 @@ extension ResetDBParameterGroupInputBody: Swift.Decodable {
     }
 }
 
-enum ResetDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension ResetDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding {
+extension ResetDBParameterGroupOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: ResetDBParameterGroupOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: ResetDBParameterGroupOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbParameterGroupName = output.dbParameterGroupName
         } else {
             self.dbParameterGroupName = nil
@@ -45035,7 +45024,7 @@ extension ResetDBParameterGroupOutputResponse: ClientRuntime.HttpResponseBinding
 }
 
 /// Contains the result of a successful invocation of the ModifyDBParameterGroup or ResetDBParameterGroup action.
-public struct ResetDBParameterGroupOutputResponse: Swift.Equatable {
+public struct ResetDBParameterGroupOutput: Swift.Equatable {
     /// The name of the DB parameter group.
     public var dbParameterGroupName: Swift.String?
 
@@ -45047,11 +45036,11 @@ public struct ResetDBParameterGroupOutputResponse: Swift.Equatable {
     }
 }
 
-struct ResetDBParameterGroupOutputResponseBody: Swift.Equatable {
+struct ResetDBParameterGroupOutputBody: Swift.Equatable {
     let dbParameterGroupName: Swift.String?
 }
 
-extension ResetDBParameterGroupOutputResponseBody: Swift.Decodable {
+extension ResetDBParameterGroupOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbParameterGroupName = "DBParameterGroupName"
     }
@@ -45061,6 +45050,17 @@ extension ResetDBParameterGroupOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("ResetDBParameterGroupResult"))
         let dbParameterGroupNameDecoded = try containerValues.decodeIfPresent(Swift.String.self, forKey: .dbParameterGroupName)
         dbParameterGroupName = dbParameterGroupNameDecoded
+    }
+}
+
+enum ResetDBParameterGroupOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBParameterGroupNotFound": return try await DBParameterGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBParameterGroupState": return try await InvalidDBParameterGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -45772,6 +45772,47 @@ extension RestoreDBClusterFromS3InputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBClusterFromS3Output: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBClusterFromS3OutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct RestoreDBClusterFromS3Output: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct RestoreDBClusterFromS3OutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension RestoreDBClusterFromS3OutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterFromS3Result"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum RestoreDBClusterFromS3OutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -45793,47 +45834,6 @@ enum RestoreDBClusterFromS3OutputError: ClientRuntime.HttpResponseErrorBinding {
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBClusterFromS3OutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBClusterFromS3OutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct RestoreDBClusterFromS3OutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct RestoreDBClusterFromS3OutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension RestoreDBClusterFromS3OutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterFromS3Result"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -46345,6 +46345,47 @@ extension RestoreDBClusterFromSnapshotInputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBClusterFromSnapshotOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBClusterFromSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct RestoreDBClusterFromSnapshotOutput: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct RestoreDBClusterFromSnapshotOutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension RestoreDBClusterFromSnapshotOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterFromSnapshotResult"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum RestoreDBClusterFromSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -46370,47 +46411,6 @@ enum RestoreDBClusterFromSnapshotOutputError: ClientRuntime.HttpResponseErrorBin
             case "StorageQuotaExceeded": return try await StorageQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBClusterFromSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBClusterFromSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct RestoreDBClusterFromSnapshotOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct RestoreDBClusterFromSnapshotOutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension RestoreDBClusterFromSnapshotOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterFromSnapshotResult"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -46912,6 +46912,47 @@ extension RestoreDBClusterToPointInTimeInputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBClusterToPointInTimeOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBClusterToPointInTimeOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbCluster = output.dbCluster
+        } else {
+            self.dbCluster = nil
+        }
+    }
+}
+
+public struct RestoreDBClusterToPointInTimeOutput: Swift.Equatable {
+    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
+    public var dbCluster: RDSClientTypes.DBCluster?
+
+    public init(
+        dbCluster: RDSClientTypes.DBCluster? = nil
+    )
+    {
+        self.dbCluster = dbCluster
+    }
+}
+
+struct RestoreDBClusterToPointInTimeOutputBody: Swift.Equatable {
+    let dbCluster: RDSClientTypes.DBCluster?
+}
+
+extension RestoreDBClusterToPointInTimeOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbCluster = "DBCluster"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterToPointInTimeResult"))
+        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
+        dbCluster = dbClusterDecoded
+    }
+}
+
 enum RestoreDBClusterToPointInTimeOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -46937,47 +46978,6 @@ enum RestoreDBClusterToPointInTimeOutputError: ClientRuntime.HttpResponseErrorBi
             case "StorageQuotaExceeded": return try await StorageQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBClusterToPointInTimeOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBClusterToPointInTimeOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbCluster = output.dbCluster
-        } else {
-            self.dbCluster = nil
-        }
-    }
-}
-
-public struct RestoreDBClusterToPointInTimeOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
-    public var dbCluster: RDSClientTypes.DBCluster?
-
-    public init(
-        dbCluster: RDSClientTypes.DBCluster? = nil
-    )
-    {
-        self.dbCluster = dbCluster
-    }
-}
-
-struct RestoreDBClusterToPointInTimeOutputResponseBody: Swift.Equatable {
-    let dbCluster: RDSClientTypes.DBCluster?
-}
-
-extension RestoreDBClusterToPointInTimeOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbCluster = "DBCluster"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBClusterToPointInTimeResult"))
-        let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
-        dbCluster = dbClusterDecoded
     }
 }
 
@@ -47668,6 +47668,47 @@ extension RestoreDBInstanceFromDBSnapshotInputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBInstanceFromDBSnapshotOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBInstanceFromDBSnapshotOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct RestoreDBInstanceFromDBSnapshotOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct RestoreDBInstanceFromDBSnapshotOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension RestoreDBInstanceFromDBSnapshotOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceFromDBSnapshotResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum RestoreDBInstanceFromDBSnapshotOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -47696,47 +47737,6 @@ enum RestoreDBInstanceFromDBSnapshotOutputError: ClientRuntime.HttpResponseError
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBInstanceFromDBSnapshotOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBInstanceFromDBSnapshotOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct RestoreDBInstanceFromDBSnapshotOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct RestoreDBInstanceFromDBSnapshotOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension RestoreDBInstanceFromDBSnapshotOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceFromDBSnapshotResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -48501,6 +48501,47 @@ extension RestoreDBInstanceFromS3InputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBInstanceFromS3Output: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBInstanceFromS3OutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct RestoreDBInstanceFromS3Output: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct RestoreDBInstanceFromS3OutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension RestoreDBInstanceFromS3OutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceFromS3Result"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum RestoreDBInstanceFromS3OutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -48525,47 +48566,6 @@ enum RestoreDBInstanceFromS3OutputError: ClientRuntime.HttpResponseErrorBinding 
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBInstanceFromS3OutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBInstanceFromS3OutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct RestoreDBInstanceFromS3OutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct RestoreDBInstanceFromS3OutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension RestoreDBInstanceFromS3OutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceFromS3Result"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -49315,6 +49315,47 @@ extension RestoreDBInstanceToPointInTimeInputBody: Swift.Decodable {
     }
 }
 
+extension RestoreDBInstanceToPointInTimeOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: RestoreDBInstanceToPointInTimeOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct RestoreDBInstanceToPointInTimeOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct RestoreDBInstanceToPointInTimeOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension RestoreDBInstanceToPointInTimeOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceToPointInTimeResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum RestoreDBInstanceToPointInTimeOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -49344,47 +49385,6 @@ enum RestoreDBInstanceToPointInTimeOutputError: ClientRuntime.HttpResponseErrorB
             case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension RestoreDBInstanceToPointInTimeOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: RestoreDBInstanceToPointInTimeOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct RestoreDBInstanceToPointInTimeOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct RestoreDBInstanceToPointInTimeOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension RestoreDBInstanceToPointInTimeOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RestoreDBInstanceToPointInTimeResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -49524,23 +49524,11 @@ extension RevokeDBSecurityGroupIngressInputBody: Swift.Decodable {
     }
 }
 
-enum RevokeDBSecurityGroupIngressOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "AuthorizationNotFound": return try await AuthorizationNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBSecurityGroupState": return try await InvalidDBSecurityGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension RevokeDBSecurityGroupIngressOutputResponse: ClientRuntime.HttpResponseBinding {
+extension RevokeDBSecurityGroupIngressOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: RevokeDBSecurityGroupIngressOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: RevokeDBSecurityGroupIngressOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbSecurityGroup = output.dbSecurityGroup
         } else {
             self.dbSecurityGroup = nil
@@ -49548,7 +49536,7 @@ extension RevokeDBSecurityGroupIngressOutputResponse: ClientRuntime.HttpResponse
     }
 }
 
-public struct RevokeDBSecurityGroupIngressOutputResponse: Swift.Equatable {
+public struct RevokeDBSecurityGroupIngressOutput: Swift.Equatable {
     /// Contains the details for an Amazon RDS DB security group. This data type is used as a response element in the DescribeDBSecurityGroups action.
     public var dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 
@@ -49560,11 +49548,11 @@ public struct RevokeDBSecurityGroupIngressOutputResponse: Swift.Equatable {
     }
 }
 
-struct RevokeDBSecurityGroupIngressOutputResponseBody: Swift.Equatable {
+struct RevokeDBSecurityGroupIngressOutputBody: Swift.Equatable {
     let dbSecurityGroup: RDSClientTypes.DBSecurityGroup?
 }
 
-extension RevokeDBSecurityGroupIngressOutputResponseBody: Swift.Decodable {
+extension RevokeDBSecurityGroupIngressOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbSecurityGroup = "DBSecurityGroup"
     }
@@ -49574,6 +49562,18 @@ extension RevokeDBSecurityGroupIngressOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("RevokeDBSecurityGroupIngressResult"))
         let dbSecurityGroupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBSecurityGroup.self, forKey: .dbSecurityGroup)
         dbSecurityGroup = dbSecurityGroupDecoded
+    }
+}
+
+enum RevokeDBSecurityGroupIngressOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "AuthorizationNotFound": return try await AuthorizationNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSecurityGroupNotFound": return try await DBSecurityGroupNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBSecurityGroupState": return try await InvalidDBSecurityGroupStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -50479,26 +50479,11 @@ extension StartActivityStreamInputBody: Swift.Decodable {
     }
 }
 
-enum StartActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StartActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StartActivityStreamOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StartActivityStreamOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StartActivityStreamOutputBody = try responseDecoder.decode(responseBody: data)
             self.applyImmediately = output.applyImmediately
             self.engineNativeAuditFieldsIncluded = output.engineNativeAuditFieldsIncluded
             self.kinesisStreamName = output.kinesisStreamName
@@ -50516,7 +50501,7 @@ extension StartActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct StartActivityStreamOutputResponse: Swift.Equatable {
+public struct StartActivityStreamOutput: Swift.Equatable {
     /// Indicates whether or not the database activity stream will start as soon as possible, regardless of the maintenance window for the database.
     public var applyImmediately: Swift.Bool
     /// Indicates whether engine-native audit fields are included in the database activity stream.
@@ -50548,7 +50533,7 @@ public struct StartActivityStreamOutputResponse: Swift.Equatable {
     }
 }
 
-struct StartActivityStreamOutputResponseBody: Swift.Equatable {
+struct StartActivityStreamOutputBody: Swift.Equatable {
     let kmsKeyId: Swift.String?
     let kinesisStreamName: Swift.String?
     let status: RDSClientTypes.ActivityStreamStatus?
@@ -50557,7 +50542,7 @@ struct StartActivityStreamOutputResponseBody: Swift.Equatable {
     let engineNativeAuditFieldsIncluded: Swift.Bool?
 }
 
-extension StartActivityStreamOutputResponseBody: Swift.Decodable {
+extension StartActivityStreamOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case applyImmediately = "ApplyImmediately"
         case engineNativeAuditFieldsIncluded = "EngineNativeAuditFieldsIncluded"
@@ -50582,6 +50567,21 @@ extension StartActivityStreamOutputResponseBody: Swift.Decodable {
         applyImmediately = applyImmediatelyDecoded
         let engineNativeAuditFieldsIncludedDecoded = try containerValues.decodeIfPresent(Swift.Bool.self, forKey: .engineNativeAuditFieldsIncluded)
         engineNativeAuditFieldsIncluded = engineNativeAuditFieldsIncludedDecoded
+    }
+}
+
+enum StartActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -50631,23 +50631,11 @@ extension StartDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum StartDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StartDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StartDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StartDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StartDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbCluster = output.dbCluster
         } else {
             self.dbCluster = nil
@@ -50655,7 +50643,7 @@ extension StartDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct StartDBClusterOutputResponse: Swift.Equatable {
+public struct StartDBClusterOutput: Swift.Equatable {
     /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
     public var dbCluster: RDSClientTypes.DBCluster?
 
@@ -50667,11 +50655,11 @@ public struct StartDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct StartDBClusterOutputResponseBody: Swift.Equatable {
+struct StartDBClusterOutputBody: Swift.Equatable {
     let dbCluster: RDSClientTypes.DBCluster?
 }
 
-extension StartDBClusterOutputResponseBody: Swift.Decodable {
+extension StartDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbCluster = "DBCluster"
     }
@@ -50681,6 +50669,18 @@ extension StartDBClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StartDBClusterResult"))
         let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
         dbCluster = dbClusterDecoded
+    }
+}
+
+enum StartDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -50763,25 +50763,11 @@ extension StartDBInstanceAutomatedBackupsReplicationInputBody: Swift.Decodable {
     }
 }
 
-enum StartDBInstanceAutomatedBackupsReplicationOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceAutomatedBackupQuotaExceeded": return try await DBInstanceAutomatedBackupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StartDBInstanceAutomatedBackupsReplicationOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StartDBInstanceAutomatedBackupsReplicationOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StartDBInstanceAutomatedBackupsReplicationOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StartDBInstanceAutomatedBackupsReplicationOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstanceAutomatedBackup = output.dbInstanceAutomatedBackup
         } else {
             self.dbInstanceAutomatedBackup = nil
@@ -50789,7 +50775,7 @@ extension StartDBInstanceAutomatedBackupsReplicationOutputResponse: ClientRuntim
     }
 }
 
-public struct StartDBInstanceAutomatedBackupsReplicationOutputResponse: Swift.Equatable {
+public struct StartDBInstanceAutomatedBackupsReplicationOutput: Swift.Equatable {
     /// An automated backup of a DB instance. It consists of system backups, transaction logs, and the database instance properties that existed at the time you deleted the source instance.
     public var dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 
@@ -50801,11 +50787,11 @@ public struct StartDBInstanceAutomatedBackupsReplicationOutputResponse: Swift.Eq
     }
 }
 
-struct StartDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.Equatable {
+struct StartDBInstanceAutomatedBackupsReplicationOutputBody: Swift.Equatable {
     let dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 }
 
-extension StartDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.Decodable {
+extension StartDBInstanceAutomatedBackupsReplicationOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstanceAutomatedBackup = "DBInstanceAutomatedBackup"
     }
@@ -50815,6 +50801,20 @@ extension StartDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.De
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StartDBInstanceAutomatedBackupsReplicationResult"))
         let dbInstanceAutomatedBackupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstanceAutomatedBackup.self, forKey: .dbInstanceAutomatedBackup)
         dbInstanceAutomatedBackup = dbInstanceAutomatedBackupDecoded
+    }
+}
+
+enum StartDBInstanceAutomatedBackupsReplicationOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceAutomatedBackupQuotaExceeded": return try await DBInstanceAutomatedBackupQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "StorageTypeNotSupported": return try await StorageTypeNotSupportedFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -50864,6 +50864,47 @@ extension StartDBInstanceInputBody: Swift.Decodable {
     }
 }
 
+extension StartDBInstanceOutput: ClientRuntime.HttpResponseBinding {
+    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
+        if let data = try await httpResponse.body.readData(),
+            let responseDecoder = decoder {
+            let output: StartDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
+            self.dbInstance = output.dbInstance
+        } else {
+            self.dbInstance = nil
+        }
+    }
+}
+
+public struct StartDBInstanceOutput: Swift.Equatable {
+    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
+    public var dbInstance: RDSClientTypes.DBInstance?
+
+    public init(
+        dbInstance: RDSClientTypes.DBInstance? = nil
+    )
+    {
+        self.dbInstance = dbInstance
+    }
+}
+
+struct StartDBInstanceOutputBody: Swift.Equatable {
+    let dbInstance: RDSClientTypes.DBInstance?
+}
+
+extension StartDBInstanceOutputBody: Swift.Decodable {
+    enum CodingKeys: Swift.String, Swift.CodingKey {
+        case dbInstance = "DBInstance"
+    }
+
+    public init(from decoder: Swift.Decoder) throws {
+        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
+        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StartDBInstanceResult"))
+        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
+        dbInstance = dbInstanceDecoded
+    }
+}
+
 enum StartDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
     static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
         let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
@@ -50881,47 +50922,6 @@ enum StartDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
             case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
             default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
         }
-    }
-}
-
-extension StartDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
-    public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
-        if let data = try await httpResponse.body.readData(),
-            let responseDecoder = decoder {
-            let output: StartDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
-            self.dbInstance = output.dbInstance
-        } else {
-            self.dbInstance = nil
-        }
-    }
-}
-
-public struct StartDBInstanceOutputResponse: Swift.Equatable {
-    /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
-    public var dbInstance: RDSClientTypes.DBInstance?
-
-    public init(
-        dbInstance: RDSClientTypes.DBInstance? = nil
-    )
-    {
-        self.dbInstance = dbInstance
-    }
-}
-
-struct StartDBInstanceOutputResponseBody: Swift.Equatable {
-    let dbInstance: RDSClientTypes.DBInstance?
-}
-
-extension StartDBInstanceOutputResponseBody: Swift.Decodable {
-    enum CodingKeys: Swift.String, Swift.CodingKey {
-        case dbInstance = "DBInstance"
-    }
-
-    public init(from decoder: Swift.Decoder) throws {
-        let topLevelContainer = try decoder.container(keyedBy: ClientRuntime.Key.self)
-        let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StartDBInstanceResult"))
-        let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
-        dbInstance = dbInstanceDecoded
     }
 }
 
@@ -51110,30 +51110,11 @@ extension StartExportTaskInputBody: Swift.Decodable {
     }
 }
 
-enum StartExportTaskOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ExportTaskAlreadyExists": return try await ExportTaskAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "IamRoleMissingPermissions": return try await IamRoleMissingPermissionsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "IamRoleNotFound": return try await IamRoleNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidExportOnly": return try await InvalidExportOnlyFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidExportSourceState": return try await InvalidExportSourceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidS3BucketFault": return try await InvalidS3BucketFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StartExportTaskOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StartExportTaskOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StartExportTaskOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StartExportTaskOutputBody = try responseDecoder.decode(responseBody: data)
             self.exportOnly = output.exportOnly
             self.exportTaskIdentifier = output.exportTaskIdentifier
             self.failureCause = output.failureCause
@@ -51172,7 +51153,7 @@ extension StartExportTaskOutputResponse: ClientRuntime.HttpResponseBinding {
 }
 
 /// Contains the details of a snapshot or cluster export to Amazon S3. This data type is used as a response element in the DescribeExportTasks action.
-public struct StartExportTaskOutputResponse: Swift.Equatable {
+public struct StartExportTaskOutput: Swift.Equatable {
     /// The data exported from the snapshot or cluster. Valid values are the following:
     ///
     /// * database - Export all the data from a specified database.
@@ -51264,7 +51245,7 @@ public struct StartExportTaskOutputResponse: Swift.Equatable {
     }
 }
 
-struct StartExportTaskOutputResponseBody: Swift.Equatable {
+struct StartExportTaskOutputBody: Swift.Equatable {
     let exportTaskIdentifier: Swift.String?
     let sourceArn: Swift.String?
     let exportOnly: [Swift.String]?
@@ -51283,7 +51264,7 @@ struct StartExportTaskOutputResponseBody: Swift.Equatable {
     let sourceType: RDSClientTypes.ExportSourceType?
 }
 
-extension StartExportTaskOutputResponseBody: Swift.Decodable {
+extension StartExportTaskOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case exportOnly = "ExportOnly"
         case exportTaskIdentifier = "ExportTaskIdentifier"
@@ -51358,6 +51339,25 @@ extension StartExportTaskOutputResponseBody: Swift.Decodable {
     }
 }
 
+enum StartExportTaskOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBClusterSnapshotNotFoundFault": return try await DBClusterSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSnapshotNotFound": return try await DBSnapshotNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ExportTaskAlreadyExists": return try await ExportTaskAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "IamRoleMissingPermissions": return try await IamRoleMissingPermissionsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "IamRoleNotFound": return try await IamRoleNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidExportOnly": return try await InvalidExportOnlyFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidExportSourceState": return try await InvalidExportSourceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidS3BucketFault": return try await InvalidS3BucketFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "KMSKeyNotAccessibleFault": return try await KMSKeyNotAccessibleFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
+    }
+}
+
 extension StopActivityStreamInput: Swift.Encodable {
     public func encode(to encoder: Swift.Encoder) throws {
         var container = encoder.container(keyedBy: ClientRuntime.Key.self)
@@ -51415,25 +51415,11 @@ extension StopActivityStreamInputBody: Swift.Decodable {
     }
 }
 
-enum StopActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StopActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StopActivityStreamOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StopActivityStreamOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StopActivityStreamOutputBody = try responseDecoder.decode(responseBody: data)
             self.kinesisStreamName = output.kinesisStreamName
             self.kmsKeyId = output.kmsKeyId
             self.status = output.status
@@ -51445,7 +51431,7 @@ extension StopActivityStreamOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct StopActivityStreamOutputResponse: Swift.Equatable {
+public struct StopActivityStreamOutput: Swift.Equatable {
     /// The name of the Amazon Kinesis data stream used for the database activity stream.
     public var kinesisStreamName: Swift.String?
     /// The Amazon Web Services KMS key identifier used for encrypting messages in the database activity stream. The Amazon Web Services KMS key identifier is the key ARN, key ID, alias ARN, or alias name for the KMS key.
@@ -51465,13 +51451,13 @@ public struct StopActivityStreamOutputResponse: Swift.Equatable {
     }
 }
 
-struct StopActivityStreamOutputResponseBody: Swift.Equatable {
+struct StopActivityStreamOutputBody: Swift.Equatable {
     let kmsKeyId: Swift.String?
     let kinesisStreamName: Swift.String?
     let status: RDSClientTypes.ActivityStreamStatus?
 }
 
-extension StopActivityStreamOutputResponseBody: Swift.Decodable {
+extension StopActivityStreamOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case kinesisStreamName = "KinesisStreamName"
         case kmsKeyId = "KmsKeyId"
@@ -51487,6 +51473,20 @@ extension StopActivityStreamOutputResponseBody: Swift.Decodable {
         kinesisStreamName = kinesisStreamNameDecoded
         let statusDecoded = try containerValues.decodeIfPresent(RDSClientTypes.ActivityStreamStatus.self, forKey: .status)
         status = statusDecoded
+    }
+}
+
+enum StopActivityStreamOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "ResourceNotFoundFault": return try await ResourceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -51536,23 +51536,11 @@ extension StopDBClusterInputBody: Swift.Decodable {
     }
 }
 
-enum StopDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StopDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StopDBClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StopDBClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StopDBClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbCluster = output.dbCluster
         } else {
             self.dbCluster = nil
@@ -51560,7 +51548,7 @@ extension StopDBClusterOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct StopDBClusterOutputResponse: Swift.Equatable {
+public struct StopDBClusterOutput: Swift.Equatable {
     /// Contains the details of an Amazon Aurora DB cluster or Multi-AZ DB cluster. For an Amazon Aurora DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, PromoteReadReplicaDBCluster, RestoreDBClusterFromS3, RestoreDBClusterFromSnapshot, RestoreDBClusterToPointInTime, StartDBCluster, and StopDBCluster. For a Multi-AZ DB cluster, this data type is used as a response element in the operations CreateDBCluster, DeleteDBCluster, DescribeDBClusters, FailoverDBCluster, ModifyDBCluster, RebootDBCluster, RestoreDBClusterFromSnapshot, and RestoreDBClusterToPointInTime. For more information on Amazon Aurora DB clusters, see [ What is Amazon Aurora?](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html) in the Amazon Aurora User Guide. For more information on Multi-AZ DB clusters, see [ Multi-AZ deployments with two readable standby DB instances](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html) in the Amazon RDS User Guide.
     public var dbCluster: RDSClientTypes.DBCluster?
 
@@ -51572,11 +51560,11 @@ public struct StopDBClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct StopDBClusterOutputResponseBody: Swift.Equatable {
+struct StopDBClusterOutputBody: Swift.Equatable {
     let dbCluster: RDSClientTypes.DBCluster?
 }
 
-extension StopDBClusterOutputResponseBody: Swift.Decodable {
+extension StopDBClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbCluster = "DBCluster"
     }
@@ -51586,6 +51574,18 @@ extension StopDBClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StopDBClusterResult"))
         let dbClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBCluster.self, forKey: .dbCluster)
         dbCluster = dbClusterDecoded
+    }
+}
+
+enum StopDBClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -51635,22 +51635,11 @@ extension StopDBInstanceAutomatedBackupsReplicationInputBody: Swift.Decodable {
     }
 }
 
-enum StopDBInstanceAutomatedBackupsReplicationOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StopDBInstanceAutomatedBackupsReplicationOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StopDBInstanceAutomatedBackupsReplicationOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StopDBInstanceAutomatedBackupsReplicationOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StopDBInstanceAutomatedBackupsReplicationOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstanceAutomatedBackup = output.dbInstanceAutomatedBackup
         } else {
             self.dbInstanceAutomatedBackup = nil
@@ -51658,7 +51647,7 @@ extension StopDBInstanceAutomatedBackupsReplicationOutputResponse: ClientRuntime
     }
 }
 
-public struct StopDBInstanceAutomatedBackupsReplicationOutputResponse: Swift.Equatable {
+public struct StopDBInstanceAutomatedBackupsReplicationOutput: Swift.Equatable {
     /// An automated backup of a DB instance. It consists of system backups, transaction logs, and the database instance properties that existed at the time you deleted the source instance.
     public var dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 
@@ -51670,11 +51659,11 @@ public struct StopDBInstanceAutomatedBackupsReplicationOutputResponse: Swift.Equ
     }
 }
 
-struct StopDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.Equatable {
+struct StopDBInstanceAutomatedBackupsReplicationOutputBody: Swift.Equatable {
     let dbInstanceAutomatedBackup: RDSClientTypes.DBInstanceAutomatedBackup?
 }
 
-extension StopDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.Decodable {
+extension StopDBInstanceAutomatedBackupsReplicationOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstanceAutomatedBackup = "DBInstanceAutomatedBackup"
     }
@@ -51684,6 +51673,17 @@ extension StopDBInstanceAutomatedBackupsReplicationOutputResponseBody: Swift.Dec
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StopDBInstanceAutomatedBackupsReplicationResult"))
         let dbInstanceAutomatedBackupDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstanceAutomatedBackup.self, forKey: .dbInstanceAutomatedBackup)
         dbInstanceAutomatedBackup = dbInstanceAutomatedBackupDecoded
+    }
+}
+
+enum StopDBInstanceAutomatedBackupsReplicationOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -51744,25 +51744,11 @@ extension StopDBInstanceInputBody: Swift.Decodable {
     }
 }
 
-enum StopDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "DBSnapshotAlreadyExists": return try await DBSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension StopDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
+extension StopDBInstanceOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: StopDBInstanceOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: StopDBInstanceOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstance = output.dbInstance
         } else {
             self.dbInstance = nil
@@ -51770,7 +51756,7 @@ extension StopDBInstanceOutputResponse: ClientRuntime.HttpResponseBinding {
     }
 }
 
-public struct StopDBInstanceOutputResponse: Swift.Equatable {
+public struct StopDBInstanceOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
     public var dbInstance: RDSClientTypes.DBInstance?
 
@@ -51782,11 +51768,11 @@ public struct StopDBInstanceOutputResponse: Swift.Equatable {
     }
 }
 
-struct StopDBInstanceOutputResponseBody: Swift.Equatable {
+struct StopDBInstanceOutputBody: Swift.Equatable {
     let dbInstance: RDSClientTypes.DBInstance?
 }
 
-extension StopDBInstanceOutputResponseBody: Swift.Decodable {
+extension StopDBInstanceOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstance = "DBInstance"
     }
@@ -51796,6 +51782,20 @@ extension StopDBInstanceOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("StopDBInstanceResult"))
         let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
         dbInstance = dbInstanceDecoded
+    }
+}
+
+enum StopDBInstanceOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "DBSnapshotAlreadyExists": return try await DBSnapshotAlreadyExistsFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "SnapshotQuotaExceeded": return try await SnapshotQuotaExceededFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -52301,22 +52301,11 @@ extension SwitchoverBlueGreenDeploymentInputBody: Swift.Decodable {
     }
 }
 
-enum SwitchoverBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidBlueGreenDeploymentStateFault": return try await InvalidBlueGreenDeploymentStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension SwitchoverBlueGreenDeploymentOutputResponse: ClientRuntime.HttpResponseBinding {
+extension SwitchoverBlueGreenDeploymentOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: SwitchoverBlueGreenDeploymentOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: SwitchoverBlueGreenDeploymentOutputBody = try responseDecoder.decode(responseBody: data)
             self.blueGreenDeployment = output.blueGreenDeployment
         } else {
             self.blueGreenDeployment = nil
@@ -52324,7 +52313,7 @@ extension SwitchoverBlueGreenDeploymentOutputResponse: ClientRuntime.HttpRespons
     }
 }
 
-public struct SwitchoverBlueGreenDeploymentOutputResponse: Swift.Equatable {
+public struct SwitchoverBlueGreenDeploymentOutput: Swift.Equatable {
     /// Details about a blue/green deployment. For more information, see [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html) in the Amazon RDS User Guide and [Using Amazon RDS Blue/Green Deployments for database updates](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/blue-green-deployments.html) in the Amazon Aurora User Guide.
     public var blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
 
@@ -52336,11 +52325,11 @@ public struct SwitchoverBlueGreenDeploymentOutputResponse: Swift.Equatable {
     }
 }
 
-struct SwitchoverBlueGreenDeploymentOutputResponseBody: Swift.Equatable {
+struct SwitchoverBlueGreenDeploymentOutputBody: Swift.Equatable {
     let blueGreenDeployment: RDSClientTypes.BlueGreenDeployment?
 }
 
-extension SwitchoverBlueGreenDeploymentOutputResponseBody: Swift.Decodable {
+extension SwitchoverBlueGreenDeploymentOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case blueGreenDeployment = "BlueGreenDeployment"
     }
@@ -52350,6 +52339,17 @@ extension SwitchoverBlueGreenDeploymentOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("SwitchoverBlueGreenDeploymentResult"))
         let blueGreenDeploymentDecoded = try containerValues.decodeIfPresent(RDSClientTypes.BlueGreenDeployment.self, forKey: .blueGreenDeployment)
         blueGreenDeployment = blueGreenDeploymentDecoded
+    }
+}
+
+enum SwitchoverBlueGreenDeploymentOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "BlueGreenDeploymentNotFoundFault": return try await BlueGreenDeploymentNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidBlueGreenDeploymentStateFault": return try await InvalidBlueGreenDeploymentStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -52482,24 +52482,11 @@ extension SwitchoverGlobalClusterInputBody: Swift.Decodable {
     }
 }
 
-enum SwitchoverGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension SwitchoverGlobalClusterOutputResponse: ClientRuntime.HttpResponseBinding {
+extension SwitchoverGlobalClusterOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: SwitchoverGlobalClusterOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: SwitchoverGlobalClusterOutputBody = try responseDecoder.decode(responseBody: data)
             self.globalCluster = output.globalCluster
         } else {
             self.globalCluster = nil
@@ -52507,7 +52494,7 @@ extension SwitchoverGlobalClusterOutputResponse: ClientRuntime.HttpResponseBindi
     }
 }
 
-public struct SwitchoverGlobalClusterOutputResponse: Swift.Equatable {
+public struct SwitchoverGlobalClusterOutput: Swift.Equatable {
     /// A data type representing an Aurora global database.
     public var globalCluster: RDSClientTypes.GlobalCluster?
 
@@ -52519,11 +52506,11 @@ public struct SwitchoverGlobalClusterOutputResponse: Swift.Equatable {
     }
 }
 
-struct SwitchoverGlobalClusterOutputResponseBody: Swift.Equatable {
+struct SwitchoverGlobalClusterOutputBody: Swift.Equatable {
     let globalCluster: RDSClientTypes.GlobalCluster?
 }
 
-extension SwitchoverGlobalClusterOutputResponseBody: Swift.Decodable {
+extension SwitchoverGlobalClusterOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case globalCluster = "GlobalCluster"
     }
@@ -52533,6 +52520,19 @@ extension SwitchoverGlobalClusterOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("SwitchoverGlobalClusterResult"))
         let globalClusterDecoded = try containerValues.decodeIfPresent(RDSClientTypes.GlobalCluster.self, forKey: .globalCluster)
         globalCluster = globalClusterDecoded
+    }
+}
+
+enum SwitchoverGlobalClusterOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBClusterNotFoundFault": return try await DBClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "GlobalClusterNotFoundFault": return try await GlobalClusterNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBClusterStateFault": return try await InvalidDBClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidGlobalClusterStateFault": return try await InvalidGlobalClusterStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 
@@ -52584,22 +52584,11 @@ extension SwitchoverReadReplicaInputBody: Swift.Decodable {
     }
 }
 
-enum SwitchoverReadReplicaOutputError: ClientRuntime.HttpResponseErrorBinding {
-    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
-        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
-        switch restXMLError.errorCode {
-            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
-            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
-        }
-    }
-}
-
-extension SwitchoverReadReplicaOutputResponse: ClientRuntime.HttpResponseBinding {
+extension SwitchoverReadReplicaOutput: ClientRuntime.HttpResponseBinding {
     public init(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws {
         if let data = try await httpResponse.body.readData(),
             let responseDecoder = decoder {
-            let output: SwitchoverReadReplicaOutputResponseBody = try responseDecoder.decode(responseBody: data)
+            let output: SwitchoverReadReplicaOutputBody = try responseDecoder.decode(responseBody: data)
             self.dbInstance = output.dbInstance
         } else {
             self.dbInstance = nil
@@ -52607,7 +52596,7 @@ extension SwitchoverReadReplicaOutputResponse: ClientRuntime.HttpResponseBinding
     }
 }
 
-public struct SwitchoverReadReplicaOutputResponse: Swift.Equatable {
+public struct SwitchoverReadReplicaOutput: Swift.Equatable {
     /// Contains the details of an Amazon RDS DB instance. This data type is used as a response element in the operations CreateDBInstance, CreateDBInstanceReadReplica, DeleteDBInstance, DescribeDBInstances, ModifyDBInstance, PromoteReadReplica, RebootDBInstance, RestoreDBInstanceFromDBSnapshot, RestoreDBInstanceFromS3, RestoreDBInstanceToPointInTime, StartDBInstance, and StopDBInstance.
     public var dbInstance: RDSClientTypes.DBInstance?
 
@@ -52619,11 +52608,11 @@ public struct SwitchoverReadReplicaOutputResponse: Swift.Equatable {
     }
 }
 
-struct SwitchoverReadReplicaOutputResponseBody: Swift.Equatable {
+struct SwitchoverReadReplicaOutputBody: Swift.Equatable {
     let dbInstance: RDSClientTypes.DBInstance?
 }
 
-extension SwitchoverReadReplicaOutputResponseBody: Swift.Decodable {
+extension SwitchoverReadReplicaOutputBody: Swift.Decodable {
     enum CodingKeys: Swift.String, Swift.CodingKey {
         case dbInstance = "DBInstance"
     }
@@ -52633,6 +52622,17 @@ extension SwitchoverReadReplicaOutputResponseBody: Swift.Decodable {
         let containerValues = try topLevelContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: ClientRuntime.Key("SwitchoverReadReplicaResult"))
         let dbInstanceDecoded = try containerValues.decodeIfPresent(RDSClientTypes.DBInstance.self, forKey: .dbInstance)
         dbInstance = dbInstanceDecoded
+    }
+}
+
+enum SwitchoverReadReplicaOutputError: ClientRuntime.HttpResponseErrorBinding {
+    static func makeError(httpResponse: ClientRuntime.HttpResponse, decoder: ClientRuntime.ResponseDecoder? = nil) async throws -> Swift.Error {
+        let restXMLError = try await AWSClientRuntime.RestXMLError(httpResponse: httpResponse)
+        switch restXMLError.errorCode {
+            case "DBInstanceNotFound": return try await DBInstanceNotFoundFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            case "InvalidDBInstanceState": return try await InvalidDBInstanceStateFault(httpResponse: httpResponse, decoder: decoder, message: restXMLError.message, requestID: restXMLError.requestId)
+            default: return try await AWSClientRuntime.UnknownAWSHTTPServiceError.makeError(httpResponse: httpResponse, message: restXMLError.message, requestID: restXMLError.requestId, typeName: restXMLError.errorCode)
+        }
     }
 }
 

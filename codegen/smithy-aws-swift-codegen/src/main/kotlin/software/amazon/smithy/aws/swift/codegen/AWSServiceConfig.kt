@@ -5,9 +5,7 @@
 
 package software.amazon.smithy.aws.swift.codegen
 
-import software.amazon.smithy.aws.traits.auth.SigV4Trait
 import software.amazon.smithy.codegen.core.Symbol
-import software.amazon.smithy.model.knowledge.ServiceIndex
 import software.amazon.smithy.model.shapes.ShapeType
 import software.amazon.smithy.rulesengine.traits.ClientContextParamsTrait
 import software.amazon.smithy.swift.codegen.SwiftTypes
@@ -15,7 +13,6 @@ import software.amazon.smithy.swift.codegen.SwiftWriter
 import software.amazon.smithy.swift.codegen.integration.ConfigField
 import software.amazon.smithy.swift.codegen.integration.ProtocolGenerator
 import software.amazon.smithy.swift.codegen.integration.ServiceConfig
-import software.amazon.smithy.swift.codegen.integration.ServiceTypes
 import software.amazon.smithy.swift.codegen.model.buildSymbol
 import software.amazon.smithy.swift.codegen.model.getTrait
 import software.amazon.smithy.swift.codegen.utils.clientName
@@ -47,13 +44,14 @@ class AWSServiceConfig(writer: SwiftWriter, val ctx: ProtocolGenerator.Generatio
                 writer.write("")
                 writer.write("public var serviceName: String { \$S }", serviceName)
                 writer.write("public var clientName: String { \$S }", clientName)
+                writer.write("public var authSchemeResolver: any ${serviceName.clientName()}AuthSchemeResolver")
                 serviceConfigs.forEach { config ->
                     writer.write("public var \$L: ${config.propFormatter}", config.memberName, config.type)
                 }
                 writer.write("")
                 writer.openBlock(
                     "public init(endpointResolver: EndpointResolver? = nil, " +
-                        "authSchemeResolver: ${serviceName.clientName()}AuthSchemeResolver? = nil",
+                        "authSchemeResolver: (any ${serviceName.clientName()}AuthSchemeResolver)? = nil) throws {",
                     "}"
                 ) {
                     writer.write("self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()")
@@ -97,9 +95,6 @@ class AWSServiceConfig(writer: SwiftWriter, val ctx: ProtocolGenerator.Generatio
 
         // service specific EndpointResolver
         configs.add(ConfigField(ENDPOINT_RESOLVER, AWSServiceTypes.EndpointResolver, "\$N", "Endpoint resolver"))
-        // service specific AuthSchemeResolver
-        configs.add(ConfigField(AUTH_SCHEME_RESOLVER, buildSymbol { this.name = serviceName.clientName() + "AuthSchemeResolver" }, "\$N"))
-
         val clientContextParams = ctx.service.getTrait<ClientContextParamsTrait>()
         clientContextParams?.parameters?.forEach {
             configs.add(ConfigField(it.key.toLowerCamelCase(), it.value.type.toSwiftType(), "\$T"))

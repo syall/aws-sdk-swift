@@ -21,7 +21,7 @@ class UserAgentMiddleware(val settings: SwiftSettings) : MiddlewareRenderable {
 
     override val position = MiddlewarePosition.BEFORE
 
-    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String) {
+    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String, clientName: String?) {
         writer.write("$operationStackName.${middlewareStep.stringValue()}.intercept(position: ${position.stringValue()}, middleware: \$N(${middlewareParamsString()}))", AWSClientRuntimeTypes.Core.UserAgentMiddleware)
     }
 

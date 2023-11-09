@@ -23,6 +23,9 @@ public class ACMPCAClient {
         decoder.dateDecodingStrategy = .secondsSince1970
         decoder.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         self.decoder = config.decoder ?? decoder
+        var modeledAuthSchemes: [ClientRuntime.AuthScheme] = Array()
+        modeledAuthSchemes.append(SigV4AuthScheme())
+        config.authSchemes = config.authSchemes ?? modeledAuthSchemes
         self.config = config
     }
 
@@ -42,13 +45,16 @@ extension ACMPCAClient {
 
     public struct ServiceSpecificConfiguration: AWSServiceSpecificConfiguration {
         public typealias AWSServiceEndpointResolver = EndpointResolver
+        public typealias AWSAuthSchemeResolver = ACMPCAAuthSchemeResolver
 
         public var serviceName: String { "ACM PCA" }
         public var clientName: String { "ACMPCAClient" }
+        public var authSchemeResolver: any ACMPCAAuthSchemeResolver
         public var endpointResolver: EndpointResolver
 
-        public init(endpointResolver: EndpointResolver? = nil) throws {
+        public init(endpointResolver: EndpointResolver? = nil, authSchemeResolver: (any ACMPCAAuthSchemeResolver)? = nil) throws {
             self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()
+            self.authSchemeResolver = authSchemeResolver ?? DefaultACMPCAAuthSchemeResolver()
         }
     }
 }
@@ -71,7 +77,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter CreateCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `CreateCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `CreateCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -80,7 +86,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidPolicyException` : The resource policy is invalid or is missing a required statement. For general information about IAM policy and statement structure, see [Overview of JSON Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html#access_policies-json).
     /// - `InvalidTagException` : The tag associated with the CA is not valid. The invalid argument is contained in the message field.
     /// - `LimitExceededException` : An Amazon Web Services Private CA quota has been exceeded. See the exception message returned to determine the quota that was exceeded.
-    public func createCertificateAuthority(input: CreateCertificateAuthorityInput) async throws -> CreateCertificateAuthorityOutputResponse
+    public func createCertificateAuthority(input: CreateCertificateAuthorityInput) async throws -> CreateCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -91,26 +97,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>(id: "createCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>(id: "createCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.CreateCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse>(xmlName: "CreateCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.CreateCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput>(xmlName: "CreateCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCertificateAuthorityInput, CreateCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCertificateAuthorityOutputResponse, CreateCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCertificateAuthorityOutput, CreateCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -119,7 +128,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter CreateCertificateAuthorityAuditReportInput : [no documentation found]
     ///
-    /// - Returns: `CreateCertificateAuthorityAuditReportOutputResponse` : [no documentation found]
+    /// - Returns: `CreateCertificateAuthorityAuditReportOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -130,7 +139,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `RequestInProgressException` : Your request is already in progress.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func createCertificateAuthorityAuditReport(input: CreateCertificateAuthorityAuditReportInput) async throws -> CreateCertificateAuthorityAuditReportOutputResponse
+    public func createCertificateAuthorityAuditReport(input: CreateCertificateAuthorityAuditReportInput) async throws -> CreateCertificateAuthorityAuditReportOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -141,26 +150,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>(id: "createCertificateAuthorityAuditReport")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>(id: "createCertificateAuthorityAuditReport")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse>(xAmzTarget: "ACMPrivateCA.CreateCertificateAuthorityAuditReport"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse>(xmlName: "CreateCertificateAuthorityAuditReportRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput>(xAmzTarget: "ACMPrivateCA.CreateCertificateAuthorityAuditReport"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput>(xmlName: "CreateCertificateAuthorityAuditReportRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCertificateAuthorityAuditReportInput, CreateCertificateAuthorityAuditReportOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCertificateAuthorityAuditReportOutputResponse, CreateCertificateAuthorityAuditReportOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCertificateAuthorityAuditReportOutput, CreateCertificateAuthorityAuditReportOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -175,7 +187,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter CreatePermissionInput : [no documentation found]
     ///
-    /// - Returns: `CreatePermissionOutputResponse` : [no documentation found]
+    /// - Returns: `CreatePermissionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -186,7 +198,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `PermissionAlreadyExistsException` : The designated permission has already been given to the user.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func createPermission(input: CreatePermissionInput) async throws -> CreatePermissionOutputResponse
+    public func createPermission(input: CreatePermissionInput) async throws -> CreatePermissionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -197,26 +209,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreatePermissionInput, CreatePermissionOutputResponse, CreatePermissionOutputError>(id: "createPermission")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreatePermissionInput, CreatePermissionOutputResponse, CreatePermissionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreatePermissionInput, CreatePermissionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreatePermissionInput, CreatePermissionOutput, CreatePermissionOutputError>(id: "createPermission")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreatePermissionInput, CreatePermissionOutput, CreatePermissionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreatePermissionInput, CreatePermissionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreatePermissionOutputResponse, CreatePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreatePermissionOutput, CreatePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreatePermissionInput, CreatePermissionOutputResponse>(xAmzTarget: "ACMPrivateCA.CreatePermission"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreatePermissionInput, CreatePermissionOutputResponse>(xmlName: "CreatePermissionRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreatePermissionInput, CreatePermissionOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, CreatePermissionOutput, CreatePermissionOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreatePermissionInput, CreatePermissionOutput>(xAmzTarget: "ACMPrivateCA.CreatePermission"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreatePermissionInput, CreatePermissionOutput>(xmlName: "CreatePermissionRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreatePermissionInput, CreatePermissionOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreatePermissionOutputResponse, CreatePermissionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreatePermissionOutputResponse, CreatePermissionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreatePermissionOutputResponse, CreatePermissionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreatePermissionOutputResponse, CreatePermissionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreatePermissionOutput, CreatePermissionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreatePermissionOutput, CreatePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreatePermissionOutput, CreatePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreatePermissionOutput, CreatePermissionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -225,7 +240,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter DeleteCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `DeleteCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -234,7 +249,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func deleteCertificateAuthority(input: DeleteCertificateAuthorityInput) async throws -> DeleteCertificateAuthorityOutputResponse
+    public func deleteCertificateAuthority(input: DeleteCertificateAuthorityInput) async throws -> DeleteCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -245,26 +260,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>(id: "deleteCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>(id: "deleteCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.DeleteCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse>(xmlName: "DeleteCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.DeleteCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput>(xmlName: "DeleteCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteCertificateAuthorityInput, DeleteCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteCertificateAuthorityOutputResponse, DeleteCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteCertificateAuthorityOutput, DeleteCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -279,7 +297,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter DeletePermissionInput : [no documentation found]
     ///
-    /// - Returns: `DeletePermissionOutputResponse` : [no documentation found]
+    /// - Returns: `DeletePermissionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -288,7 +306,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func deletePermission(input: DeletePermissionInput) async throws -> DeletePermissionOutputResponse
+    public func deletePermission(input: DeletePermissionInput) async throws -> DeletePermissionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -299,26 +317,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeletePermissionInput, DeletePermissionOutputResponse, DeletePermissionOutputError>(id: "deletePermission")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeletePermissionInput, DeletePermissionOutputResponse, DeletePermissionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeletePermissionInput, DeletePermissionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeletePermissionInput, DeletePermissionOutput, DeletePermissionOutputError>(id: "deletePermission")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeletePermissionInput, DeletePermissionOutput, DeletePermissionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeletePermissionInput, DeletePermissionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeletePermissionOutputResponse, DeletePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeletePermissionOutput, DeletePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeletePermissionInput, DeletePermissionOutputResponse>(xAmzTarget: "ACMPrivateCA.DeletePermission"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeletePermissionInput, DeletePermissionOutputResponse>(xmlName: "DeletePermissionRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeletePermissionInput, DeletePermissionOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, DeletePermissionOutput, DeletePermissionOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeletePermissionInput, DeletePermissionOutput>(xAmzTarget: "ACMPrivateCA.DeletePermission"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeletePermissionInput, DeletePermissionOutput>(xmlName: "DeletePermissionRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeletePermissionInput, DeletePermissionOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeletePermissionOutputResponse, DeletePermissionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeletePermissionOutputResponse, DeletePermissionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeletePermissionOutputResponse, DeletePermissionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeletePermissionOutputResponse, DeletePermissionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeletePermissionOutput, DeletePermissionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeletePermissionOutput, DeletePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeletePermissionOutput, DeletePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeletePermissionOutput, DeletePermissionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -335,7 +356,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter DeletePolicyInput : [no documentation found]
     ///
-    /// - Returns: `DeletePolicyOutputResponse` : [no documentation found]
+    /// - Returns: `DeletePolicyOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -346,7 +367,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `LockoutPreventedException` : The current action was prevented because it would lock the caller out from performing subsequent actions. Verify that the specified parameters would not result in the caller being denied access to the resource.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func deletePolicy(input: DeletePolicyInput) async throws -> DeletePolicyOutputResponse
+    public func deletePolicy(input: DeletePolicyInput) async throws -> DeletePolicyOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -357,26 +378,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeletePolicyInput, DeletePolicyOutputResponse, DeletePolicyOutputError>(id: "deletePolicy")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeletePolicyInput, DeletePolicyOutputResponse, DeletePolicyOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeletePolicyInput, DeletePolicyOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeletePolicyInput, DeletePolicyOutput, DeletePolicyOutputError>(id: "deletePolicy")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeletePolicyInput, DeletePolicyOutput, DeletePolicyOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeletePolicyInput, DeletePolicyOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeletePolicyOutputResponse, DeletePolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeletePolicyOutput, DeletePolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeletePolicyInput, DeletePolicyOutputResponse>(xAmzTarget: "ACMPrivateCA.DeletePolicy"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeletePolicyInput, DeletePolicyOutputResponse>(xmlName: "DeletePolicyRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeletePolicyInput, DeletePolicyOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, DeletePolicyOutput, DeletePolicyOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeletePolicyInput, DeletePolicyOutput>(xAmzTarget: "ACMPrivateCA.DeletePolicy"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeletePolicyInput, DeletePolicyOutput>(xmlName: "DeletePolicyRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeletePolicyInput, DeletePolicyOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeletePolicyOutputResponse, DeletePolicyOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeletePolicyOutputResponse, DeletePolicyOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeletePolicyOutputResponse, DeletePolicyOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeletePolicyOutputResponse, DeletePolicyOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeletePolicyOutput, DeletePolicyOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeletePolicyOutput, DeletePolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeletePolicyOutput, DeletePolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeletePolicyOutput, DeletePolicyOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -399,14 +423,14 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter DescribeCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `DescribeCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func describeCertificateAuthority(input: DescribeCertificateAuthorityInput) async throws -> DescribeCertificateAuthorityOutputResponse
+    public func describeCertificateAuthority(input: DescribeCertificateAuthorityInput) async throws -> DescribeCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -417,26 +441,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>(id: "describeCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>(id: "describeCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.DescribeCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse>(xmlName: "DescribeCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.DescribeCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput>(xmlName: "DescribeCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeCertificateAuthorityInput, DescribeCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeCertificateAuthorityOutputResponse, DescribeCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeCertificateAuthorityOutput, DescribeCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -445,7 +472,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter DescribeCertificateAuthorityAuditReportInput : [no documentation found]
     ///
-    /// - Returns: `DescribeCertificateAuthorityAuditReportOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeCertificateAuthorityAuditReportOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -453,7 +480,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidArgsException` : One or more of the specified arguments was not valid.
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func describeCertificateAuthorityAuditReport(input: DescribeCertificateAuthorityAuditReportInput) async throws -> DescribeCertificateAuthorityAuditReportOutputResponse
+    public func describeCertificateAuthorityAuditReport(input: DescribeCertificateAuthorityAuditReportInput) async throws -> DescribeCertificateAuthorityAuditReportOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -464,26 +491,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>(id: "describeCertificateAuthorityAuditReport")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>(id: "describeCertificateAuthorityAuditReport")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse>(xAmzTarget: "ACMPrivateCA.DescribeCertificateAuthorityAuditReport"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse>(xmlName: "DescribeCertificateAuthorityAuditReportRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput>(xAmzTarget: "ACMPrivateCA.DescribeCertificateAuthorityAuditReport"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput>(xmlName: "DescribeCertificateAuthorityAuditReportRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeCertificateAuthorityAuditReportInput, DescribeCertificateAuthorityAuditReportOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeCertificateAuthorityAuditReportOutputResponse, DescribeCertificateAuthorityAuditReportOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeCertificateAuthorityAuditReportOutput, DescribeCertificateAuthorityAuditReportOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -492,7 +522,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter GetCertificateInput : [no documentation found]
     ///
-    /// - Returns: `GetCertificateOutputResponse` : [no documentation found]
+    /// - Returns: `GetCertificateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -502,7 +532,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `RequestInProgressException` : Your request is already in progress.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func getCertificate(input: GetCertificateInput) async throws -> GetCertificateOutputResponse
+    public func getCertificate(input: GetCertificateInput) async throws -> GetCertificateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -513,26 +543,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetCertificateInput, GetCertificateOutputResponse, GetCertificateOutputError>(id: "getCertificate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateInput, GetCertificateOutputResponse, GetCertificateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateInput, GetCertificateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetCertificateInput, GetCertificateOutput, GetCertificateOutputError>(id: "getCertificate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateInput, GetCertificateOutput, GetCertificateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateInput, GetCertificateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateOutputResponse, GetCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateOutput, GetCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateInput, GetCertificateOutputResponse>(xAmzTarget: "ACMPrivateCA.GetCertificate"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateInput, GetCertificateOutputResponse>(xmlName: "GetCertificateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateInput, GetCertificateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, GetCertificateOutput, GetCertificateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateInput, GetCertificateOutput>(xAmzTarget: "ACMPrivateCA.GetCertificate"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateInput, GetCertificateOutput>(xmlName: "GetCertificateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateInput, GetCertificateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateOutputResponse, GetCertificateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetCertificateOutputResponse, GetCertificateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateOutputResponse, GetCertificateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateOutputResponse, GetCertificateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateOutput, GetCertificateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetCertificateOutput, GetCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateOutput, GetCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateOutput, GetCertificateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -541,7 +574,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter GetCertificateAuthorityCertificateInput : [no documentation found]
     ///
-    /// - Returns: `GetCertificateAuthorityCertificateOutputResponse` : [no documentation found]
+    /// - Returns: `GetCertificateAuthorityCertificateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -549,7 +582,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func getCertificateAuthorityCertificate(input: GetCertificateAuthorityCertificateInput) async throws -> GetCertificateAuthorityCertificateOutputResponse
+    public func getCertificateAuthorityCertificate(input: GetCertificateAuthorityCertificateInput) async throws -> GetCertificateAuthorityCertificateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -560,26 +593,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>(id: "getCertificateAuthorityCertificate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>(id: "getCertificateAuthorityCertificate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse>(xAmzTarget: "ACMPrivateCA.GetCertificateAuthorityCertificate"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse>(xmlName: "GetCertificateAuthorityCertificateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput>(xAmzTarget: "ACMPrivateCA.GetCertificateAuthorityCertificate"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput>(xmlName: "GetCertificateAuthorityCertificateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateAuthorityCertificateInput, GetCertificateAuthorityCertificateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateAuthorityCertificateOutputResponse, GetCertificateAuthorityCertificateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateAuthorityCertificateOutput, GetCertificateAuthorityCertificateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -588,7 +624,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter GetCertificateAuthorityCsrInput : [no documentation found]
     ///
-    /// - Returns: `GetCertificateAuthorityCsrOutputResponse` : [no documentation found]
+    /// - Returns: `GetCertificateAuthorityCsrOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -598,7 +634,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `RequestInProgressException` : Your request is already in progress.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func getCertificateAuthorityCsr(input: GetCertificateAuthorityCsrInput) async throws -> GetCertificateAuthorityCsrOutputResponse
+    public func getCertificateAuthorityCsr(input: GetCertificateAuthorityCsrInput) async throws -> GetCertificateAuthorityCsrOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -609,26 +645,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>(id: "getCertificateAuthorityCsr")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>(id: "getCertificateAuthorityCsr")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse>(xAmzTarget: "ACMPrivateCA.GetCertificateAuthorityCsr"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse>(xmlName: "GetCertificateAuthorityCsrRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput>(xAmzTarget: "ACMPrivateCA.GetCertificateAuthorityCsr"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput>(xmlName: "GetCertificateAuthorityCsrRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetCertificateAuthorityCsrInput, GetCertificateAuthorityCsrOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateAuthorityCsrOutputResponse, GetCertificateAuthorityCsrOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetCertificateAuthorityCsrOutput, GetCertificateAuthorityCsrOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -645,7 +684,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter GetPolicyInput : [no documentation found]
     ///
-    /// - Returns: `GetPolicyOutputResponse` : [no documentation found]
+    /// - Returns: `GetPolicyOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -654,7 +693,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func getPolicy(input: GetPolicyInput) async throws -> GetPolicyOutputResponse
+    public func getPolicy(input: GetPolicyInput) async throws -> GetPolicyOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -665,26 +704,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetPolicyInput, GetPolicyOutputResponse, GetPolicyOutputError>(id: "getPolicy")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetPolicyInput, GetPolicyOutputResponse, GetPolicyOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetPolicyInput, GetPolicyOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetPolicyInput, GetPolicyOutput, GetPolicyOutputError>(id: "getPolicy")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetPolicyInput, GetPolicyOutput, GetPolicyOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetPolicyInput, GetPolicyOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetPolicyOutputResponse, GetPolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetPolicyOutput, GetPolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetPolicyInput, GetPolicyOutputResponse>(xAmzTarget: "ACMPrivateCA.GetPolicy"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetPolicyInput, GetPolicyOutputResponse>(xmlName: "GetPolicyRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetPolicyInput, GetPolicyOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, GetPolicyOutput, GetPolicyOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<GetPolicyInput, GetPolicyOutput>(xAmzTarget: "ACMPrivateCA.GetPolicy"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetPolicyInput, GetPolicyOutput>(xmlName: "GetPolicyRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetPolicyInput, GetPolicyOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetPolicyOutputResponse, GetPolicyOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetPolicyOutputResponse, GetPolicyOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetPolicyOutputResponse, GetPolicyOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetPolicyOutputResponse, GetPolicyOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetPolicyOutput, GetPolicyOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetPolicyOutput, GetPolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetPolicyOutput, GetPolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetPolicyOutput, GetPolicyOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -769,7 +811,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter ImportCertificateAuthorityCertificateInput : [no documentation found]
     ///
-    /// - Returns: `ImportCertificateAuthorityCertificateOutputResponse` : [no documentation found]
+    /// - Returns: `ImportCertificateAuthorityCertificateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -783,7 +825,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `RequestInProgressException` : Your request is already in progress.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func importCertificateAuthorityCertificate(input: ImportCertificateAuthorityCertificateInput) async throws -> ImportCertificateAuthorityCertificateOutputResponse
+    public func importCertificateAuthorityCertificate(input: ImportCertificateAuthorityCertificateInput) async throws -> ImportCertificateAuthorityCertificateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -794,26 +836,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>(id: "importCertificateAuthorityCertificate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>(id: "importCertificateAuthorityCertificate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse>(xAmzTarget: "ACMPrivateCA.ImportCertificateAuthorityCertificate"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse>(xmlName: "ImportCertificateAuthorityCertificateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput>(xAmzTarget: "ACMPrivateCA.ImportCertificateAuthorityCertificate"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput>(xmlName: "ImportCertificateAuthorityCertificateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportCertificateAuthorityCertificateInput, ImportCertificateAuthorityCertificateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportCertificateAuthorityCertificateOutputResponse, ImportCertificateAuthorityCertificateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportCertificateAuthorityCertificateOutput, ImportCertificateAuthorityCertificateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -822,7 +867,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter IssueCertificateInput : [no documentation found]
     ///
-    /// - Returns: `IssueCertificateOutputResponse` : [no documentation found]
+    /// - Returns: `IssueCertificateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -833,7 +878,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `LimitExceededException` : An Amazon Web Services Private CA quota has been exceeded. See the exception message returned to determine the quota that was exceeded.
     /// - `MalformedCSRException` : The certificate signing request is invalid.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func issueCertificate(input: IssueCertificateInput) async throws -> IssueCertificateOutputResponse
+    public func issueCertificate(input: IssueCertificateInput) async throws -> IssueCertificateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -844,26 +889,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<IssueCertificateInput, IssueCertificateOutputResponse, IssueCertificateOutputError>(id: "issueCertificate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<IssueCertificateInput, IssueCertificateOutputResponse, IssueCertificateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<IssueCertificateInput, IssueCertificateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<IssueCertificateInput, IssueCertificateOutput, IssueCertificateOutputError>(id: "issueCertificate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<IssueCertificateInput, IssueCertificateOutput, IssueCertificateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<IssueCertificateInput, IssueCertificateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<IssueCertificateOutputResponse, IssueCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<IssueCertificateOutput, IssueCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<IssueCertificateInput, IssueCertificateOutputResponse>(xAmzTarget: "ACMPrivateCA.IssueCertificate"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<IssueCertificateInput, IssueCertificateOutputResponse>(xmlName: "IssueCertificateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<IssueCertificateInput, IssueCertificateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, IssueCertificateOutput, IssueCertificateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<IssueCertificateInput, IssueCertificateOutput>(xAmzTarget: "ACMPrivateCA.IssueCertificate"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<IssueCertificateInput, IssueCertificateOutput>(xmlName: "IssueCertificateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<IssueCertificateInput, IssueCertificateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, IssueCertificateOutputResponse, IssueCertificateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<IssueCertificateOutputResponse, IssueCertificateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<IssueCertificateOutputResponse, IssueCertificateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<IssueCertificateOutputResponse, IssueCertificateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, IssueCertificateOutput, IssueCertificateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<IssueCertificateOutput, IssueCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<IssueCertificateOutput, IssueCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<IssueCertificateOutput, IssueCertificateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -872,13 +920,13 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter ListCertificateAuthoritiesInput : [no documentation found]
     ///
-    /// - Returns: `ListCertificateAuthoritiesOutputResponse` : [no documentation found]
+    /// - Returns: `ListCertificateAuthoritiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidNextTokenException` : The token specified in the NextToken argument is not valid. Use the token returned from your previous call to [ListCertificateAuthorities](https://docs.aws.amazon.com/privateca/latest/APIReference/API_ListCertificateAuthorities.html).
-    public func listCertificateAuthorities(input: ListCertificateAuthoritiesInput) async throws -> ListCertificateAuthoritiesOutputResponse
+    public func listCertificateAuthorities(input: ListCertificateAuthoritiesInput) async throws -> ListCertificateAuthoritiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -889,26 +937,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>(id: "listCertificateAuthorities")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>(id: "listCertificateAuthorities")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse>(xAmzTarget: "ACMPrivateCA.ListCertificateAuthorities"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse>(xmlName: "ListCertificateAuthoritiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput>(xAmzTarget: "ACMPrivateCA.ListCertificateAuthorities"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput>(xmlName: "ListCertificateAuthoritiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListCertificateAuthoritiesInput, ListCertificateAuthoritiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListCertificateAuthoritiesOutputResponse, ListCertificateAuthoritiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListCertificateAuthoritiesOutput, ListCertificateAuthoritiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -923,7 +974,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter ListPermissionsInput : [no documentation found]
     ///
-    /// - Returns: `ListPermissionsOutputResponse` : [no documentation found]
+    /// - Returns: `ListPermissionsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -933,7 +984,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func listPermissions(input: ListPermissionsInput) async throws -> ListPermissionsOutputResponse
+    public func listPermissions(input: ListPermissionsInput) async throws -> ListPermissionsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -944,26 +995,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListPermissionsInput, ListPermissionsOutputResponse, ListPermissionsOutputError>(id: "listPermissions")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListPermissionsInput, ListPermissionsOutputResponse, ListPermissionsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListPermissionsInput, ListPermissionsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListPermissionsInput, ListPermissionsOutput, ListPermissionsOutputError>(id: "listPermissions")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListPermissionsInput, ListPermissionsOutput, ListPermissionsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListPermissionsInput, ListPermissionsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListPermissionsOutputResponse, ListPermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListPermissionsOutput, ListPermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListPermissionsInput, ListPermissionsOutputResponse>(xAmzTarget: "ACMPrivateCA.ListPermissions"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListPermissionsInput, ListPermissionsOutputResponse>(xmlName: "ListPermissionsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListPermissionsInput, ListPermissionsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, ListPermissionsOutput, ListPermissionsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListPermissionsInput, ListPermissionsOutput>(xAmzTarget: "ACMPrivateCA.ListPermissions"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListPermissionsInput, ListPermissionsOutput>(xmlName: "ListPermissionsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListPermissionsInput, ListPermissionsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListPermissionsOutputResponse, ListPermissionsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListPermissionsOutputResponse, ListPermissionsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListPermissionsOutputResponse, ListPermissionsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListPermissionsOutputResponse, ListPermissionsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListPermissionsOutput, ListPermissionsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListPermissionsOutput, ListPermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListPermissionsOutput, ListPermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListPermissionsOutput, ListPermissionsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -972,7 +1026,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter ListTagsInput : [no documentation found]
     ///
-    /// - Returns: `ListTagsOutputResponse` : [no documentation found]
+    /// - Returns: `ListTagsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -980,7 +1034,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func listTags(input: ListTagsInput) async throws -> ListTagsOutputResponse
+    public func listTags(input: ListTagsInput) async throws -> ListTagsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -991,26 +1045,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListTagsInput, ListTagsOutputResponse, ListTagsOutputError>(id: "listTags")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsInput, ListTagsOutputResponse, ListTagsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsInput, ListTagsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListTagsInput, ListTagsOutput, ListTagsOutputError>(id: "listTags")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsInput, ListTagsOutput, ListTagsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsInput, ListTagsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsOutputResponse, ListTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsOutput, ListTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListTagsInput, ListTagsOutputResponse>(xAmzTarget: "ACMPrivateCA.ListTags"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsInput, ListTagsOutputResponse>(xmlName: "ListTagsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsInput, ListTagsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, ListTagsOutput, ListTagsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListTagsInput, ListTagsOutput>(xAmzTarget: "ACMPrivateCA.ListTags"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListTagsInput, ListTagsOutput>(xmlName: "ListTagsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListTagsInput, ListTagsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsOutputResponse, ListTagsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListTagsOutputResponse, ListTagsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsOutputResponse, ListTagsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsOutputResponse, ListTagsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsOutput, ListTagsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListTagsOutput, ListTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsOutput, ListTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsOutput, ListTagsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1027,7 +1084,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter PutPolicyInput : [no documentation found]
     ///
-    /// - Returns: `PutPolicyOutputResponse` : [no documentation found]
+    /// - Returns: `PutPolicyOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1039,7 +1096,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `LockoutPreventedException` : The current action was prevented because it would lock the caller out from performing subsequent actions. Verify that the specified parameters would not result in the caller being denied access to the resource.
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func putPolicy(input: PutPolicyInput) async throws -> PutPolicyOutputResponse
+    public func putPolicy(input: PutPolicyInput) async throws -> PutPolicyOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1050,26 +1107,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<PutPolicyInput, PutPolicyOutputResponse, PutPolicyOutputError>(id: "putPolicy")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<PutPolicyInput, PutPolicyOutputResponse, PutPolicyOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<PutPolicyInput, PutPolicyOutputResponse>())
+        var operation = ClientRuntime.OperationStack<PutPolicyInput, PutPolicyOutput, PutPolicyOutputError>(id: "putPolicy")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<PutPolicyInput, PutPolicyOutput, PutPolicyOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<PutPolicyInput, PutPolicyOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<PutPolicyOutputResponse, PutPolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<PutPolicyOutput, PutPolicyOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<PutPolicyInput, PutPolicyOutputResponse>(xAmzTarget: "ACMPrivateCA.PutPolicy"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<PutPolicyInput, PutPolicyOutputResponse>(xmlName: "PutPolicyRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<PutPolicyInput, PutPolicyOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, PutPolicyOutput, PutPolicyOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<PutPolicyInput, PutPolicyOutput>(xAmzTarget: "ACMPrivateCA.PutPolicy"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<PutPolicyInput, PutPolicyOutput>(xmlName: "PutPolicyRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<PutPolicyInput, PutPolicyOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, PutPolicyOutputResponse, PutPolicyOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<PutPolicyOutputResponse, PutPolicyOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<PutPolicyOutputResponse, PutPolicyOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<PutPolicyOutputResponse, PutPolicyOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, PutPolicyOutput, PutPolicyOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<PutPolicyOutput, PutPolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<PutPolicyOutput, PutPolicyOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<PutPolicyOutput, PutPolicyOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1078,7 +1138,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter RestoreCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `RestoreCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `RestoreCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1086,7 +1146,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidArnException` : The requested Amazon Resource Name (ARN) does not refer to an existing resource.
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func restoreCertificateAuthority(input: RestoreCertificateAuthorityInput) async throws -> RestoreCertificateAuthorityOutputResponse
+    public func restoreCertificateAuthority(input: RestoreCertificateAuthorityInput) async throws -> RestoreCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1097,26 +1157,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>(id: "restoreCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>(id: "restoreCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.RestoreCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse>(xmlName: "RestoreCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.RestoreCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput>(xmlName: "RestoreCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RestoreCertificateAuthorityInput, RestoreCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RestoreCertificateAuthorityOutputResponse, RestoreCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RestoreCertificateAuthorityOutput, RestoreCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1125,7 +1188,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter RevokeCertificateInput : [no documentation found]
     ///
-    /// - Returns: `RevokeCertificateOutputResponse` : [no documentation found]
+    /// - Returns: `RevokeCertificateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1139,7 +1202,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `RequestFailedException` : The request has failed for an unspecified reason.
     /// - `RequestInProgressException` : Your request is already in progress.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func revokeCertificate(input: RevokeCertificateInput) async throws -> RevokeCertificateOutputResponse
+    public func revokeCertificate(input: RevokeCertificateInput) async throws -> RevokeCertificateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1150,26 +1213,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RevokeCertificateInput, RevokeCertificateOutputResponse, RevokeCertificateOutputError>(id: "revokeCertificate")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RevokeCertificateInput, RevokeCertificateOutputResponse, RevokeCertificateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RevokeCertificateInput, RevokeCertificateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RevokeCertificateInput, RevokeCertificateOutput, RevokeCertificateOutputError>(id: "revokeCertificate")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RevokeCertificateInput, RevokeCertificateOutput, RevokeCertificateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RevokeCertificateInput, RevokeCertificateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RevokeCertificateOutputResponse, RevokeCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RevokeCertificateOutput, RevokeCertificateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RevokeCertificateInput, RevokeCertificateOutputResponse>(xAmzTarget: "ACMPrivateCA.RevokeCertificate"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RevokeCertificateInput, RevokeCertificateOutputResponse>(xmlName: "RevokeCertificateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RevokeCertificateInput, RevokeCertificateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, RevokeCertificateOutput, RevokeCertificateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RevokeCertificateInput, RevokeCertificateOutput>(xAmzTarget: "ACMPrivateCA.RevokeCertificate"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RevokeCertificateInput, RevokeCertificateOutput>(xmlName: "RevokeCertificateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RevokeCertificateInput, RevokeCertificateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RevokeCertificateOutputResponse, RevokeCertificateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RevokeCertificateOutputResponse, RevokeCertificateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RevokeCertificateOutputResponse, RevokeCertificateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RevokeCertificateOutputResponse, RevokeCertificateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RevokeCertificateOutput, RevokeCertificateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RevokeCertificateOutput, RevokeCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RevokeCertificateOutput, RevokeCertificateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RevokeCertificateOutput, RevokeCertificateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1178,7 +1244,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter TagCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `TagCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `TagCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1188,7 +1254,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidTagException` : The tag associated with the CA is not valid. The invalid argument is contained in the message field.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
     /// - `TooManyTagsException` : You can associate up to 50 tags with a private CA. Exception information is contained in the exception message field.
-    public func tagCertificateAuthority(input: TagCertificateAuthorityInput) async throws -> TagCertificateAuthorityOutputResponse
+    public func tagCertificateAuthority(input: TagCertificateAuthorityInput) async throws -> TagCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1199,26 +1265,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>(id: "tagCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TagCertificateAuthorityInput, TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>(id: "tagCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.TagCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse>(xmlName: "TagCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.TagCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutput>(xmlName: "TagCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagCertificateAuthorityInput, TagCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagCertificateAuthorityOutputResponse, TagCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagCertificateAuthorityOutput, TagCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1227,7 +1296,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter UntagCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `UntagCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `UntagCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1236,7 +1305,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `InvalidTagException` : The tag associated with the CA is not valid. The invalid argument is contained in the message field.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func untagCertificateAuthority(input: UntagCertificateAuthorityInput) async throws -> UntagCertificateAuthorityOutputResponse
+    public func untagCertificateAuthority(input: UntagCertificateAuthorityInput) async throws -> UntagCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1247,26 +1316,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>(id: "untagCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>(id: "untagCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.UntagCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse>(xmlName: "UntagCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.UntagCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput>(xmlName: "UntagCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UntagCertificateAuthorityInput, UntagCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagCertificateAuthorityOutputResponse, UntagCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagCertificateAuthorityOutput, UntagCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1275,7 +1347,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     ///
     /// - Parameter UpdateCertificateAuthorityInput : [no documentation found]
     ///
-    /// - Returns: `UpdateCertificateAuthorityOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateCertificateAuthorityOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1286,7 +1358,7 @@ extension ACMPCAClient: ACMPCAClientProtocol {
     /// - `InvalidPolicyException` : The resource policy is invalid or is missing a required statement. For general information about IAM policy and statement structure, see [Overview of JSON Policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html#access_policies-json).
     /// - `InvalidStateException` : The state of the private CA does not allow this action to occur.
     /// - `ResourceNotFoundException` : A resource such as a private CA, S3 bucket, certificate, audit report, or policy cannot be found.
-    public func updateCertificateAuthority(input: UpdateCertificateAuthorityInput) async throws -> UpdateCertificateAuthorityOutputResponse
+    public func updateCertificateAuthority(input: UpdateCertificateAuthorityInput) async throws -> UpdateCertificateAuthorityOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1297,26 +1369,29 @@ extension ACMPCAClient: ACMPCAClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "acm-pca")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>(id: "updateCertificateAuthority")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>(id: "updateCertificateAuthority")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse>(xAmzTarget: "ACMPrivateCA.UpdateCertificateAuthority"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse>(xmlName: "UpdateCertificateAuthorityRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<ACMPCAAuthSchemeResolver, UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput>(xAmzTarget: "ACMPrivateCA.UpdateCertificateAuthority"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput>(xmlName: "UpdateCertificateAuthorityRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateCertificateAuthorityInput, UpdateCertificateAuthorityOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateCertificateAuthorityOutputResponse, UpdateCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateCertificateAuthorityOutput, UpdateCertificateAuthorityOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }

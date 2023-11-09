@@ -23,6 +23,9 @@ public class SecurityLakeClient {
         decoder.dateDecodingStrategy = .secondsSince1970
         decoder.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         self.decoder = config.decoder ?? decoder
+        var modeledAuthSchemes: [ClientRuntime.AuthScheme] = Array()
+        modeledAuthSchemes.append(SigV4AuthScheme())
+        config.authSchemes = config.authSchemes ?? modeledAuthSchemes
         self.config = config
     }
 
@@ -42,13 +45,16 @@ extension SecurityLakeClient {
 
     public struct ServiceSpecificConfiguration: AWSServiceSpecificConfiguration {
         public typealias AWSServiceEndpointResolver = EndpointResolver
+        public typealias AWSAuthSchemeResolver = SecurityLakeAuthSchemeResolver
 
         public var serviceName: String { "SecurityLake" }
         public var clientName: String { "SecurityLakeClient" }
+        public var authSchemeResolver: any SecurityLakeAuthSchemeResolver
         public var endpointResolver: EndpointResolver
 
-        public init(endpointResolver: EndpointResolver? = nil) throws {
+        public init(endpointResolver: EndpointResolver? = nil, authSchemeResolver: (any SecurityLakeAuthSchemeResolver)? = nil) throws {
             self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()
+            self.authSchemeResolver = authSchemeResolver ?? DefaultSecurityLakeAuthSchemeResolver()
         }
     }
 }
@@ -71,7 +77,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateAwsLogSourceInput : [no documentation found]
     ///
-    /// - Returns: `CreateAwsLogSourceOutputResponse` : [no documentation found]
+    /// - Returns: `CreateAwsLogSourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -82,7 +88,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createAwsLogSource(input: CreateAwsLogSourceInput) async throws -> CreateAwsLogSourceOutputResponse
+    public func createAwsLogSource(input: CreateAwsLogSourceInput) async throws -> CreateAwsLogSourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -93,25 +99,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateAwsLogSourceInput, CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>(id: "createAwsLogSource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateAwsLogSourceInput, CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>(id: "createAwsLogSource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutputResponse>(xmlName: "CreateAwsLogSourceRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateAwsLogSourceInput, CreateAwsLogSourceOutput>(xmlName: "CreateAwsLogSourceRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateAwsLogSourceOutputResponse, CreateAwsLogSourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateAwsLogSourceOutput, CreateAwsLogSourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -120,7 +129,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateCustomLogSourceInput : [no documentation found]
     ///
-    /// - Returns: `CreateCustomLogSourceOutputResponse` : [no documentation found]
+    /// - Returns: `CreateCustomLogSourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -131,7 +140,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createCustomLogSource(input: CreateCustomLogSourceInput) async throws -> CreateCustomLogSourceOutputResponse
+    public func createCustomLogSource(input: CreateCustomLogSourceInput) async throws -> CreateCustomLogSourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -142,25 +151,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateCustomLogSourceInput, CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>(id: "createCustomLogSource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateCustomLogSourceInput, CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>(id: "createCustomLogSource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutputResponse>(xmlName: "CreateCustomLogSourceRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateCustomLogSourceInput, CreateCustomLogSourceOutput>(xmlName: "CreateCustomLogSourceRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCustomLogSourceOutputResponse, CreateCustomLogSourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateCustomLogSourceOutput, CreateCustomLogSourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -169,7 +181,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateDataLakeInput : [no documentation found]
     ///
-    /// - Returns: `CreateDataLakeOutputResponse` : [no documentation found]
+    /// - Returns: `CreateDataLakeOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -180,7 +192,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createDataLake(input: CreateDataLakeInput) async throws -> CreateDataLakeOutputResponse
+    public func createDataLake(input: CreateDataLakeInput) async throws -> CreateDataLakeOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -191,25 +203,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateDataLakeInput, CreateDataLakeOutputResponse, CreateDataLakeOutputError>(id: "createDataLake")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeInput, CreateDataLakeOutputResponse, CreateDataLakeOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeInput, CreateDataLakeOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateDataLakeInput, CreateDataLakeOutput, CreateDataLakeOutputError>(id: "createDataLake")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeInput, CreateDataLakeOutput, CreateDataLakeOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeInput, CreateDataLakeOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeOutputResponse, CreateDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeOutput, CreateDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeInput, CreateDataLakeOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeInput, CreateDataLakeOutputResponse>(xmlName: "CreateDataLakeRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateDataLakeOutput, CreateDataLakeOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeInput, CreateDataLakeOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeInput, CreateDataLakeOutput>(xmlName: "CreateDataLakeRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeOutputResponse, CreateDataLakeOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateDataLakeOutputResponse, CreateDataLakeOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeOutputResponse, CreateDataLakeOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeOutputResponse, CreateDataLakeOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeOutput, CreateDataLakeOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateDataLakeOutput, CreateDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeOutput, CreateDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeOutput, CreateDataLakeOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -218,7 +233,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateDataLakeExceptionSubscriptionInput : [no documentation found]
     ///
-    /// - Returns: `CreateDataLakeExceptionSubscriptionOutputResponse` : [no documentation found]
+    /// - Returns: `CreateDataLakeExceptionSubscriptionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -229,7 +244,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createDataLakeExceptionSubscription(input: CreateDataLakeExceptionSubscriptionInput) async throws -> CreateDataLakeExceptionSubscriptionOutputResponse
+    public func createDataLakeExceptionSubscription(input: CreateDataLakeExceptionSubscriptionInput) async throws -> CreateDataLakeExceptionSubscriptionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -240,25 +255,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>(id: "createDataLakeExceptionSubscription")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>(id: "createDataLakeExceptionSubscription")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutputResponse>(xmlName: "CreateDataLakeExceptionSubscriptionRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeExceptionSubscriptionInput, CreateDataLakeExceptionSubscriptionOutput>(xmlName: "CreateDataLakeExceptionSubscriptionRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeExceptionSubscriptionOutputResponse, CreateDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeExceptionSubscriptionOutput, CreateDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -267,7 +285,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateDataLakeOrganizationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `CreateDataLakeOrganizationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `CreateDataLakeOrganizationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -278,7 +296,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createDataLakeOrganizationConfiguration(input: CreateDataLakeOrganizationConfigurationInput) async throws -> CreateDataLakeOrganizationConfigurationOutputResponse
+    public func createDataLakeOrganizationConfiguration(input: CreateDataLakeOrganizationConfigurationInput) async throws -> CreateDataLakeOrganizationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -289,25 +307,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>(id: "createDataLakeOrganizationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>(id: "createDataLakeOrganizationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutputResponse>(xmlName: "CreateDataLakeOrganizationConfigurationRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateDataLakeOrganizationConfigurationInput, CreateDataLakeOrganizationConfigurationOutput>(xmlName: "CreateDataLakeOrganizationConfigurationRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeOrganizationConfigurationOutputResponse, CreateDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateDataLakeOrganizationConfigurationOutput, CreateDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -316,7 +337,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateSubscriberInput : [no documentation found]
     ///
-    /// - Returns: `CreateSubscriberOutputResponse` : [no documentation found]
+    /// - Returns: `CreateSubscriberOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -327,7 +348,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createSubscriber(input: CreateSubscriberInput) async throws -> CreateSubscriberOutputResponse
+    public func createSubscriber(input: CreateSubscriberInput) async throws -> CreateSubscriberOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -338,25 +359,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateSubscriberInput, CreateSubscriberOutputResponse, CreateSubscriberOutputError>(id: "createSubscriber")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSubscriberInput, CreateSubscriberOutputResponse, CreateSubscriberOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSubscriberInput, CreateSubscriberOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateSubscriberInput, CreateSubscriberOutput, CreateSubscriberOutputError>(id: "createSubscriber")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSubscriberInput, CreateSubscriberOutput, CreateSubscriberOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSubscriberInput, CreateSubscriberOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSubscriberOutputResponse, CreateSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSubscriberOutput, CreateSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSubscriberInput, CreateSubscriberOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSubscriberInput, CreateSubscriberOutputResponse>(xmlName: "CreateSubscriberRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateSubscriberOutput, CreateSubscriberOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSubscriberInput, CreateSubscriberOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSubscriberInput, CreateSubscriberOutput>(xmlName: "CreateSubscriberRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSubscriberOutputResponse, CreateSubscriberOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateSubscriberOutputResponse, CreateSubscriberOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSubscriberOutputResponse, CreateSubscriberOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSubscriberOutputResponse, CreateSubscriberOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSubscriberOutput, CreateSubscriberOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateSubscriberOutput, CreateSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSubscriberOutput, CreateSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSubscriberOutput, CreateSubscriberOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -365,7 +389,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter CreateSubscriberNotificationInput : [no documentation found]
     ///
-    /// - Returns: `CreateSubscriberNotificationOutputResponse` : [no documentation found]
+    /// - Returns: `CreateSubscriberNotificationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -376,7 +400,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func createSubscriberNotification(input: CreateSubscriberNotificationInput) async throws -> CreateSubscriberNotificationOutputResponse
+    public func createSubscriberNotification(input: CreateSubscriberNotificationInput) async throws -> CreateSubscriberNotificationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -387,25 +411,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>(id: "createSubscriberNotification")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>(id: "createSubscriberNotification")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutputResponse>(xmlName: "CreateSubscriberNotificationRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateSubscriberNotificationInput, CreateSubscriberNotificationOutput>(xmlName: "CreateSubscriberNotificationRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSubscriberNotificationOutputResponse, CreateSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateSubscriberNotificationOutput, CreateSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -414,7 +441,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteAwsLogSourceInput : [no documentation found]
     ///
-    /// - Returns: `DeleteAwsLogSourceOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteAwsLogSourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -425,7 +452,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteAwsLogSource(input: DeleteAwsLogSourceInput) async throws -> DeleteAwsLogSourceOutputResponse
+    public func deleteAwsLogSource(input: DeleteAwsLogSourceInput) async throws -> DeleteAwsLogSourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -436,25 +463,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>(id: "deleteAwsLogSource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>(id: "deleteAwsLogSource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutputResponse>(xmlName: "DeleteAwsLogSourceRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteAwsLogSourceInput, DeleteAwsLogSourceOutput>(xmlName: "DeleteAwsLogSourceRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteAwsLogSourceOutputResponse, DeleteAwsLogSourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteAwsLogSourceOutput, DeleteAwsLogSourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -463,7 +493,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteCustomLogSourceInput : [no documentation found]
     ///
-    /// - Returns: `DeleteCustomLogSourceOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteCustomLogSourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -474,7 +504,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteCustomLogSource(input: DeleteCustomLogSourceInput) async throws -> DeleteCustomLogSourceOutputResponse
+    public func deleteCustomLogSource(input: DeleteCustomLogSourceInput) async throws -> DeleteCustomLogSourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -485,23 +515,26 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>(id: "deleteCustomLogSource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>(id: "deleteCustomLogSource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutputResponse>())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteCustomLogSourceOutputResponse, DeleteCustomLogSourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<DeleteCustomLogSourceInput, DeleteCustomLogSourceOutput>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteCustomLogSourceOutput, DeleteCustomLogSourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -510,7 +543,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteDataLakeInput : [no documentation found]
     ///
-    /// - Returns: `DeleteDataLakeOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteDataLakeOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -521,7 +554,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteDataLake(input: DeleteDataLakeInput) async throws -> DeleteDataLakeOutputResponse
+    public func deleteDataLake(input: DeleteDataLakeInput) async throws -> DeleteDataLakeOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -532,25 +565,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteDataLakeInput, DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>(id: "deleteDataLake")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeInput, DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeInput, DeleteDataLakeOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteDataLakeInput, DeleteDataLakeOutput, DeleteDataLakeOutputError>(id: "deleteDataLake")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeInput, DeleteDataLakeOutput, DeleteDataLakeOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeInput, DeleteDataLakeOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeOutput, DeleteDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteDataLakeInput, DeleteDataLakeOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteDataLakeInput, DeleteDataLakeOutputResponse>(xmlName: "DeleteDataLakeRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteDataLakeOutput, DeleteDataLakeOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteDataLakeInput, DeleteDataLakeOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteDataLakeInput, DeleteDataLakeOutput>(xmlName: "DeleteDataLakeRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeOutputResponse, DeleteDataLakeOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeOutput, DeleteDataLakeOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteDataLakeOutput, DeleteDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeOutput, DeleteDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeOutput, DeleteDataLakeOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -559,7 +595,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteDataLakeExceptionSubscriptionInput : [no documentation found]
     ///
-    /// - Returns: `DeleteDataLakeExceptionSubscriptionOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteDataLakeExceptionSubscriptionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -570,7 +606,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteDataLakeExceptionSubscription(input: DeleteDataLakeExceptionSubscriptionInput) async throws -> DeleteDataLakeExceptionSubscriptionOutputResponse
+    public func deleteDataLakeExceptionSubscription(input: DeleteDataLakeExceptionSubscriptionInput) async throws -> DeleteDataLakeExceptionSubscriptionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -581,22 +617,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>(id: "deleteDataLakeExceptionSubscription")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>(id: "deleteDataLakeExceptionSubscription")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeExceptionSubscriptionInput, DeleteDataLakeExceptionSubscriptionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeExceptionSubscriptionOutputResponse, DeleteDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeExceptionSubscriptionOutput, DeleteDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -605,7 +644,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteDataLakeOrganizationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `DeleteDataLakeOrganizationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteDataLakeOrganizationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -616,7 +655,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteDataLakeOrganizationConfiguration(input: DeleteDataLakeOrganizationConfigurationInput) async throws -> DeleteDataLakeOrganizationConfigurationOutputResponse
+    public func deleteDataLakeOrganizationConfiguration(input: DeleteDataLakeOrganizationConfigurationInput) async throws -> DeleteDataLakeOrganizationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -627,25 +666,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>(id: "deleteDataLakeOrganizationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>(id: "deleteDataLakeOrganizationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutputResponse>(xmlName: "DeleteDataLakeOrganizationConfigurationRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteDataLakeOrganizationConfigurationInput, DeleteDataLakeOrganizationConfigurationOutput>(xmlName: "DeleteDataLakeOrganizationConfigurationRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeOrganizationConfigurationOutputResponse, DeleteDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteDataLakeOrganizationConfigurationOutput, DeleteDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -654,7 +696,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteSubscriberInput : [no documentation found]
     ///
-    /// - Returns: `DeleteSubscriberOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteSubscriberOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -665,7 +707,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteSubscriber(input: DeleteSubscriberInput) async throws -> DeleteSubscriberOutputResponse
+    public func deleteSubscriber(input: DeleteSubscriberInput) async throws -> DeleteSubscriberOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -676,22 +718,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteSubscriberInput, DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>(id: "deleteSubscriber")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSubscriberInput, DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSubscriberInput, DeleteSubscriberOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteSubscriberInput, DeleteSubscriberOutput, DeleteSubscriberOutputError>(id: "deleteSubscriber")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSubscriberInput, DeleteSubscriberOutput, DeleteSubscriberOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSubscriberInput, DeleteSubscriberOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSubscriberOutput, DeleteSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSubscriberOutputResponse, DeleteSubscriberOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteSubscriberOutput, DeleteSubscriberOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSubscriberOutput, DeleteSubscriberOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteSubscriberOutput, DeleteSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSubscriberOutput, DeleteSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSubscriberOutput, DeleteSubscriberOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -700,7 +745,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeleteSubscriberNotificationInput : [no documentation found]
     ///
-    /// - Returns: `DeleteSubscriberNotificationOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteSubscriberNotificationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -711,7 +756,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deleteSubscriberNotification(input: DeleteSubscriberNotificationInput) async throws -> DeleteSubscriberNotificationOutputResponse
+    public func deleteSubscriberNotification(input: DeleteSubscriberNotificationInput) async throws -> DeleteSubscriberNotificationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -722,22 +767,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>(id: "deleteSubscriberNotification")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>(id: "deleteSubscriberNotification")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteSubscriberNotificationInput, DeleteSubscriberNotificationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSubscriberNotificationOutputResponse, DeleteSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteSubscriberNotificationOutput, DeleteSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -746,7 +794,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter DeregisterDataLakeDelegatedAdministratorInput : [no documentation found]
     ///
-    /// - Returns: `DeregisterDataLakeDelegatedAdministratorOutputResponse` : [no documentation found]
+    /// - Returns: `DeregisterDataLakeDelegatedAdministratorOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -757,7 +805,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func deregisterDataLakeDelegatedAdministrator(input: DeregisterDataLakeDelegatedAdministratorInput) async throws -> DeregisterDataLakeDelegatedAdministratorOutputResponse
+    public func deregisterDataLakeDelegatedAdministrator(input: DeregisterDataLakeDelegatedAdministratorInput) async throws -> DeregisterDataLakeDelegatedAdministratorOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -768,22 +816,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>(id: "deregisterDataLakeDelegatedAdministrator")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>(id: "deregisterDataLakeDelegatedAdministrator")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeregisterDataLakeDelegatedAdministratorInput, DeregisterDataLakeDelegatedAdministratorOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeregisterDataLakeDelegatedAdministratorOutputResponse, DeregisterDataLakeDelegatedAdministratorOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeregisterDataLakeDelegatedAdministratorOutput, DeregisterDataLakeDelegatedAdministratorOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -792,7 +843,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter GetDataLakeExceptionSubscriptionInput : [no documentation found]
     ///
-    /// - Returns: `GetDataLakeExceptionSubscriptionOutputResponse` : [no documentation found]
+    /// - Returns: `GetDataLakeExceptionSubscriptionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -803,7 +854,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func getDataLakeExceptionSubscription(input: GetDataLakeExceptionSubscriptionInput) async throws -> GetDataLakeExceptionSubscriptionOutputResponse
+    public func getDataLakeExceptionSubscription(input: GetDataLakeExceptionSubscriptionInput) async throws -> GetDataLakeExceptionSubscriptionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -814,22 +865,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>(id: "getDataLakeExceptionSubscription")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>(id: "getDataLakeExceptionSubscription")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeExceptionSubscriptionInput, GetDataLakeExceptionSubscriptionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeExceptionSubscriptionOutputResponse, GetDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeExceptionSubscriptionOutput, GetDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -838,7 +892,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter GetDataLakeOrganizationConfigurationInput : [no documentation found]
     ///
-    /// - Returns: `GetDataLakeOrganizationConfigurationOutputResponse` : [no documentation found]
+    /// - Returns: `GetDataLakeOrganizationConfigurationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -849,7 +903,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func getDataLakeOrganizationConfiguration(input: GetDataLakeOrganizationConfigurationInput) async throws -> GetDataLakeOrganizationConfigurationOutputResponse
+    public func getDataLakeOrganizationConfiguration(input: GetDataLakeOrganizationConfigurationInput) async throws -> GetDataLakeOrganizationConfigurationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -860,22 +914,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>(id: "getDataLakeOrganizationConfiguration")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>(id: "getDataLakeOrganizationConfiguration")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeOrganizationConfigurationInput, GetDataLakeOrganizationConfigurationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeOrganizationConfigurationOutputResponse, GetDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeOrganizationConfigurationOutput, GetDataLakeOrganizationConfigurationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -884,7 +941,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter GetDataLakeSourcesInput : [no documentation found]
     ///
-    /// - Returns: `GetDataLakeSourcesOutputResponse` : [no documentation found]
+    /// - Returns: `GetDataLakeSourcesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -895,7 +952,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func getDataLakeSources(input: GetDataLakeSourcesInput) async throws -> GetDataLakeSourcesOutputResponse
+    public func getDataLakeSources(input: GetDataLakeSourcesInput) async throws -> GetDataLakeSourcesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -906,25 +963,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetDataLakeSourcesInput, GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>(id: "getDataLakeSources")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetDataLakeSourcesInput, GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>(id: "getDataLakeSources")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutputResponse>(xmlName: "GetDataLakeSourcesRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GetDataLakeSourcesInput, GetDataLakeSourcesOutput>(xmlName: "GetDataLakeSourcesRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeSourcesOutputResponse, GetDataLakeSourcesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetDataLakeSourcesOutput, GetDataLakeSourcesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -933,7 +993,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter GetSubscriberInput : [no documentation found]
     ///
-    /// - Returns: `GetSubscriberOutputResponse` : [no documentation found]
+    /// - Returns: `GetSubscriberOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -944,7 +1004,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func getSubscriber(input: GetSubscriberInput) async throws -> GetSubscriberOutputResponse
+    public func getSubscriber(input: GetSubscriberInput) async throws -> GetSubscriberOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -955,22 +1015,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GetSubscriberInput, GetSubscriberOutputResponse, GetSubscriberOutputError>(id: "getSubscriber")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetSubscriberInput, GetSubscriberOutputResponse, GetSubscriberOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetSubscriberInput, GetSubscriberOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GetSubscriberInput, GetSubscriberOutput, GetSubscriberOutputError>(id: "getSubscriber")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GetSubscriberInput, GetSubscriberOutput, GetSubscriberOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GetSubscriberInput, GetSubscriberOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetSubscriberOutputResponse, GetSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GetSubscriberOutput, GetSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetSubscriberOutputResponse, GetSubscriberOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GetSubscriberOutputResponse, GetSubscriberOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetSubscriberOutputResponse, GetSubscriberOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetSubscriberOutputResponse, GetSubscriberOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, GetSubscriberOutput, GetSubscriberOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GetSubscriberOutput, GetSubscriberOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GetSubscriberOutput, GetSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GetSubscriberOutput, GetSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GetSubscriberOutput, GetSubscriberOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -979,7 +1042,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter ListDataLakeExceptionsInput : [no documentation found]
     ///
-    /// - Returns: `ListDataLakeExceptionsOutputResponse` : [no documentation found]
+    /// - Returns: `ListDataLakeExceptionsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -990,7 +1053,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func listDataLakeExceptions(input: ListDataLakeExceptionsInput) async throws -> ListDataLakeExceptionsOutputResponse
+    public func listDataLakeExceptions(input: ListDataLakeExceptionsInput) async throws -> ListDataLakeExceptionsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1001,25 +1064,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>(id: "listDataLakeExceptions")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>(id: "listDataLakeExceptions")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutputResponse>(xmlName: "ListDataLakeExceptionsRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListDataLakeExceptionsInput, ListDataLakeExceptionsOutput>(xmlName: "ListDataLakeExceptionsRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListDataLakeExceptionsOutputResponse, ListDataLakeExceptionsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListDataLakeExceptionsOutput, ListDataLakeExceptionsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1028,7 +1094,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter ListDataLakesInput : [no documentation found]
     ///
-    /// - Returns: `ListDataLakesOutputResponse` : [no documentation found]
+    /// - Returns: `ListDataLakesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1039,7 +1105,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func listDataLakes(input: ListDataLakesInput) async throws -> ListDataLakesOutputResponse
+    public func listDataLakes(input: ListDataLakesInput) async throws -> ListDataLakesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1050,23 +1116,26 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListDataLakesInput, ListDataLakesOutputResponse, ListDataLakesOutputError>(id: "listDataLakes")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListDataLakesInput, ListDataLakesOutputResponse, ListDataLakesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListDataLakesInput, ListDataLakesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListDataLakesInput, ListDataLakesOutput, ListDataLakesOutputError>(id: "listDataLakes")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListDataLakesInput, ListDataLakesOutput, ListDataLakesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListDataLakesInput, ListDataLakesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListDataLakesOutputResponse, ListDataLakesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListDataLakesOutput, ListDataLakesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<ListDataLakesInput, ListDataLakesOutputResponse>())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListDataLakesOutputResponse, ListDataLakesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListDataLakesOutputResponse, ListDataLakesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListDataLakesOutputResponse, ListDataLakesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListDataLakesOutputResponse, ListDataLakesOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, ListDataLakesOutput, ListDataLakesOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<ListDataLakesInput, ListDataLakesOutput>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListDataLakesOutput, ListDataLakesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListDataLakesOutput, ListDataLakesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListDataLakesOutput, ListDataLakesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListDataLakesOutput, ListDataLakesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1075,7 +1144,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter ListLogSourcesInput : [no documentation found]
     ///
-    /// - Returns: `ListLogSourcesOutputResponse` : [no documentation found]
+    /// - Returns: `ListLogSourcesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1086,7 +1155,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func listLogSources(input: ListLogSourcesInput) async throws -> ListLogSourcesOutputResponse
+    public func listLogSources(input: ListLogSourcesInput) async throws -> ListLogSourcesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1097,25 +1166,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListLogSourcesInput, ListLogSourcesOutputResponse, ListLogSourcesOutputError>(id: "listLogSources")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListLogSourcesInput, ListLogSourcesOutputResponse, ListLogSourcesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListLogSourcesInput, ListLogSourcesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListLogSourcesInput, ListLogSourcesOutput, ListLogSourcesOutputError>(id: "listLogSources")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListLogSourcesInput, ListLogSourcesOutput, ListLogSourcesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListLogSourcesInput, ListLogSourcesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListLogSourcesOutputResponse, ListLogSourcesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListLogSourcesOutput, ListLogSourcesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListLogSourcesInput, ListLogSourcesOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListLogSourcesInput, ListLogSourcesOutputResponse>(xmlName: "ListLogSourcesRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, ListLogSourcesOutput, ListLogSourcesOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListLogSourcesInput, ListLogSourcesOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListLogSourcesInput, ListLogSourcesOutput>(xmlName: "ListLogSourcesRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListLogSourcesOutputResponse, ListLogSourcesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListLogSourcesOutputResponse, ListLogSourcesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListLogSourcesOutputResponse, ListLogSourcesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListLogSourcesOutputResponse, ListLogSourcesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListLogSourcesOutput, ListLogSourcesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListLogSourcesOutput, ListLogSourcesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListLogSourcesOutput, ListLogSourcesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListLogSourcesOutput, ListLogSourcesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1124,7 +1196,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter ListSubscribersInput : [no documentation found]
     ///
-    /// - Returns: `ListSubscribersOutputResponse` : [no documentation found]
+    /// - Returns: `ListSubscribersOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1135,7 +1207,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func listSubscribers(input: ListSubscribersInput) async throws -> ListSubscribersOutputResponse
+    public func listSubscribers(input: ListSubscribersInput) async throws -> ListSubscribersOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1146,23 +1218,26 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListSubscribersInput, ListSubscribersOutputResponse, ListSubscribersOutputError>(id: "listSubscribers")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListSubscribersInput, ListSubscribersOutputResponse, ListSubscribersOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListSubscribersInput, ListSubscribersOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListSubscribersInput, ListSubscribersOutput, ListSubscribersOutputError>(id: "listSubscribers")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListSubscribersInput, ListSubscribersOutput, ListSubscribersOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListSubscribersInput, ListSubscribersOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListSubscribersOutputResponse, ListSubscribersOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListSubscribersOutput, ListSubscribersOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<ListSubscribersInput, ListSubscribersOutputResponse>())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListSubscribersOutputResponse, ListSubscribersOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListSubscribersOutputResponse, ListSubscribersOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListSubscribersOutputResponse, ListSubscribersOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListSubscribersOutputResponse, ListSubscribersOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, ListSubscribersOutput, ListSubscribersOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<ListSubscribersInput, ListSubscribersOutput>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListSubscribersOutput, ListSubscribersOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListSubscribersOutput, ListSubscribersOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListSubscribersOutput, ListSubscribersOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListSubscribersOutput, ListSubscribersOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1171,7 +1246,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter ListTagsForResourceInput : [no documentation found]
     ///
-    /// - Returns: `ListTagsForResourceOutputResponse` : [no documentation found]
+    /// - Returns: `ListTagsForResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1182,7 +1257,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func listTagsForResource(input: ListTagsForResourceInput) async throws -> ListTagsForResourceOutputResponse
+    public func listTagsForResource(input: ListTagsForResourceInput) async throws -> ListTagsForResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1193,22 +1268,25 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListTagsForResourceInput, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(id: "listTagsForResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForResourceInput, ListTagsForResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListTagsForResourceInput, ListTagsForResourceOutput, ListTagsForResourceOutputError>(id: "listTagsForResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListTagsForResourceInput, ListTagsForResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForResourceOutputResponse, ListTagsForResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListTagsForResourceOutput, ListTagsForResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListTagsForResourceOutput, ListTagsForResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1217,7 +1295,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter RegisterDataLakeDelegatedAdministratorInput : [no documentation found]
     ///
-    /// - Returns: `RegisterDataLakeDelegatedAdministratorOutputResponse` : [no documentation found]
+    /// - Returns: `RegisterDataLakeDelegatedAdministratorOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1228,7 +1306,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func registerDataLakeDelegatedAdministrator(input: RegisterDataLakeDelegatedAdministratorInput) async throws -> RegisterDataLakeDelegatedAdministratorOutputResponse
+    public func registerDataLakeDelegatedAdministrator(input: RegisterDataLakeDelegatedAdministratorInput) async throws -> RegisterDataLakeDelegatedAdministratorOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1239,25 +1317,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>(id: "registerDataLakeDelegatedAdministrator")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>(id: "registerDataLakeDelegatedAdministrator")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutputResponse>(xmlName: "RegisterDataLakeDelegatedAdministratorRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RegisterDataLakeDelegatedAdministratorInput, RegisterDataLakeDelegatedAdministratorOutput>(xmlName: "RegisterDataLakeDelegatedAdministratorRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RegisterDataLakeDelegatedAdministratorOutputResponse, RegisterDataLakeDelegatedAdministratorOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RegisterDataLakeDelegatedAdministratorOutput, RegisterDataLakeDelegatedAdministratorOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1266,7 +1347,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter TagResourceInput : [no documentation found]
     ///
-    /// - Returns: `TagResourceOutputResponse` : [no documentation found]
+    /// - Returns: `TagResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1277,7 +1358,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func tagResource(input: TagResourceInput) async throws -> TagResourceOutputResponse
+    public func tagResource(input: TagResourceInput) async throws -> TagResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1288,25 +1369,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TagResourceInput, TagResourceOutputResponse, TagResourceOutputError>(id: "tagResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagResourceInput, TagResourceOutputResponse, TagResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagResourceInput, TagResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TagResourceInput, TagResourceOutput, TagResourceOutputError>(id: "tagResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TagResourceInput, TagResourceOutput, TagResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TagResourceInput, TagResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagResourceOutputResponse, TagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TagResourceOutput, TagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagResourceInput, TagResourceOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagResourceInput, TagResourceOutputResponse>(xmlName: "TagResourceRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, TagResourceOutput, TagResourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TagResourceInput, TagResourceOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TagResourceInput, TagResourceOutput>(xmlName: "TagResourceRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagResourceOutputResponse, TagResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TagResourceOutputResponse, TagResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagResourceOutputResponse, TagResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagResourceOutputResponse, TagResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TagResourceOutput, TagResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TagResourceOutput, TagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TagResourceOutput, TagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TagResourceOutput, TagResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1315,7 +1399,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter UntagResourceInput : [no documentation found]
     ///
-    /// - Returns: `UntagResourceOutputResponse` : [no documentation found]
+    /// - Returns: `UntagResourceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1326,7 +1410,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func untagResource(input: UntagResourceInput) async throws -> UntagResourceOutputResponse
+    public func untagResource(input: UntagResourceInput) async throws -> UntagResourceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1337,23 +1421,26 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UntagResourceInput, UntagResourceOutputResponse, UntagResourceOutputError>(id: "untagResource")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagResourceInput, UntagResourceOutputResponse, UntagResourceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagResourceInput, UntagResourceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UntagResourceInput, UntagResourceOutput, UntagResourceOutputError>(id: "untagResource")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UntagResourceInput, UntagResourceOutput, UntagResourceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UntagResourceInput, UntagResourceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UntagResourceOutput, UntagResourceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<UntagResourceInput, UntagResourceOutputResponse>())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagResourceOutputResponse, UntagResourceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UntagResourceOutputResponse, UntagResourceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagResourceOutputResponse, UntagResourceOutputError>(clientLogMode: config.clientLogMode))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, UntagResourceOutput, UntagResourceOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.QueryItemMiddleware<UntagResourceInput, UntagResourceOutput>())
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UntagResourceOutput, UntagResourceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UntagResourceOutput, UntagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UntagResourceOutput, UntagResourceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UntagResourceOutput, UntagResourceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1362,7 +1449,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter UpdateDataLakeInput : [no documentation found]
     ///
-    /// - Returns: `UpdateDataLakeOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateDataLakeOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1373,7 +1460,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func updateDataLake(input: UpdateDataLakeInput) async throws -> UpdateDataLakeOutputResponse
+    public func updateDataLake(input: UpdateDataLakeInput) async throws -> UpdateDataLakeOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1384,25 +1471,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateDataLakeInput, UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>(id: "updateDataLake")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataLakeInput, UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataLakeInput, UpdateDataLakeOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateDataLakeInput, UpdateDataLakeOutput, UpdateDataLakeOutputError>(id: "updateDataLake")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataLakeInput, UpdateDataLakeOutput, UpdateDataLakeOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataLakeInput, UpdateDataLakeOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataLakeOutput, UpdateDataLakeOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataLakeInput, UpdateDataLakeOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataLakeInput, UpdateDataLakeOutputResponse>(xmlName: "UpdateDataLakeRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, UpdateDataLakeOutput, UpdateDataLakeOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataLakeInput, UpdateDataLakeOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataLakeInput, UpdateDataLakeOutput>(xmlName: "UpdateDataLakeRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataLakeOutputResponse, UpdateDataLakeOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataLakeOutput, UpdateDataLakeOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateDataLakeOutput, UpdateDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataLakeOutput, UpdateDataLakeOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataLakeOutput, UpdateDataLakeOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1411,7 +1501,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter UpdateDataLakeExceptionSubscriptionInput : [no documentation found]
     ///
-    /// - Returns: `UpdateDataLakeExceptionSubscriptionOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateDataLakeExceptionSubscriptionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1422,7 +1512,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func updateDataLakeExceptionSubscription(input: UpdateDataLakeExceptionSubscriptionInput) async throws -> UpdateDataLakeExceptionSubscriptionOutputResponse
+    public func updateDataLakeExceptionSubscription(input: UpdateDataLakeExceptionSubscriptionInput) async throws -> UpdateDataLakeExceptionSubscriptionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1433,25 +1523,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>(id: "updateDataLakeExceptionSubscription")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>(id: "updateDataLakeExceptionSubscription")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutputResponse>(xmlName: "UpdateDataLakeExceptionSubscriptionRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateDataLakeExceptionSubscriptionInput, UpdateDataLakeExceptionSubscriptionOutput>(xmlName: "UpdateDataLakeExceptionSubscriptionRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataLakeExceptionSubscriptionOutputResponse, UpdateDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateDataLakeExceptionSubscriptionOutput, UpdateDataLakeExceptionSubscriptionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1460,7 +1553,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter UpdateSubscriberInput : [no documentation found]
     ///
-    /// - Returns: `UpdateSubscriberOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateSubscriberOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1471,7 +1564,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func updateSubscriber(input: UpdateSubscriberInput) async throws -> UpdateSubscriberOutputResponse
+    public func updateSubscriber(input: UpdateSubscriberInput) async throws -> UpdateSubscriberOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1482,25 +1575,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateSubscriberInput, UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>(id: "updateSubscriber")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSubscriberInput, UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSubscriberInput, UpdateSubscriberOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateSubscriberInput, UpdateSubscriberOutput, UpdateSubscriberOutputError>(id: "updateSubscriber")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSubscriberInput, UpdateSubscriberOutput, UpdateSubscriberOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSubscriberInput, UpdateSubscriberOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSubscriberOutput, UpdateSubscriberOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSubscriberInput, UpdateSubscriberOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSubscriberInput, UpdateSubscriberOutputResponse>(xmlName: "UpdateSubscriberRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, UpdateSubscriberOutput, UpdateSubscriberOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSubscriberInput, UpdateSubscriberOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSubscriberInput, UpdateSubscriberOutput>(xmlName: "UpdateSubscriberRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSubscriberOutputResponse, UpdateSubscriberOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSubscriberOutput, UpdateSubscriberOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateSubscriberOutput, UpdateSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSubscriberOutput, UpdateSubscriberOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSubscriberOutput, UpdateSubscriberOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1509,7 +1605,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     ///
     /// - Parameter UpdateSubscriberNotificationInput : [no documentation found]
     ///
-    /// - Returns: `UpdateSubscriberNotificationOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateSubscriberNotificationOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1520,7 +1616,7 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
     /// - `InternalServerException` : Internal service exceptions are sometimes caused by transient issues. Before you start troubleshooting, perform the operation again.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ThrottlingException` : The limit on the number of requests per second was exceeded.
-    public func updateSubscriberNotification(input: UpdateSubscriberNotificationInput) async throws -> UpdateSubscriberNotificationOutputResponse
+    public func updateSubscriberNotification(input: UpdateSubscriberNotificationInput) async throws -> UpdateSubscriberNotificationOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1531,25 +1627,28 @@ extension SecurityLakeClient: SecurityLakeClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "securitylake")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>(id: "updateSubscriberNotification")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>(id: "updateSubscriberNotification")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutputResponse>(xmlName: "UpdateSubscriberNotificationRequest"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<SecurityLakeAuthSchemeResolver, UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateSubscriberNotificationInput, UpdateSubscriberNotificationOutput>(xmlName: "UpdateSubscriberNotificationRequest"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSubscriberNotificationOutputResponse, UpdateSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateSubscriberNotificationOutput, UpdateSubscriberNotificationOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }

@@ -23,6 +23,9 @@ public class PaymentCryptographyDataClient {
         decoder.dateDecodingStrategy = .secondsSince1970
         decoder.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         self.decoder = config.decoder ?? decoder
+        var modeledAuthSchemes: [ClientRuntime.AuthScheme] = Array()
+        modeledAuthSchemes.append(SigV4AuthScheme())
+        config.authSchemes = config.authSchemes ?? modeledAuthSchemes
         self.config = config
     }
 
@@ -42,13 +45,16 @@ extension PaymentCryptographyDataClient {
 
     public struct ServiceSpecificConfiguration: AWSServiceSpecificConfiguration {
         public typealias AWSServiceEndpointResolver = EndpointResolver
+        public typealias AWSAuthSchemeResolver = PaymentCryptographyDataAuthSchemeResolver
 
         public var serviceName: String { "Payment Cryptography Data" }
         public var clientName: String { "PaymentCryptographyDataClient" }
+        public var authSchemeResolver: any PaymentCryptographyDataAuthSchemeResolver
         public var endpointResolver: EndpointResolver
 
-        public init(endpointResolver: EndpointResolver? = nil) throws {
+        public init(endpointResolver: EndpointResolver? = nil, authSchemeResolver: (any PaymentCryptographyDataAuthSchemeResolver)? = nil) throws {
             self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()
+            self.authSchemeResolver = authSchemeResolver ?? DefaultPaymentCryptographyDataAuthSchemeResolver()
         }
     }
 }
@@ -77,7 +83,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter DecryptDataInput : [no documentation found]
     ///
-    /// - Returns: `DecryptDataOutputResponse` : [no documentation found]
+    /// - Returns: `DecryptDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -87,7 +93,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func decryptData(input: DecryptDataInput) async throws -> DecryptDataOutputResponse
+    public func decryptData(input: DecryptDataInput) async throws -> DecryptDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -98,25 +104,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DecryptDataInput, DecryptDataOutputResponse, DecryptDataOutputError>(id: "decryptData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DecryptDataInput, DecryptDataOutputResponse, DecryptDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DecryptDataInput, DecryptDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DecryptDataInput, DecryptDataOutput, DecryptDataOutputError>(id: "decryptData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DecryptDataInput, DecryptDataOutput, DecryptDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DecryptDataInput, DecryptDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DecryptDataOutputResponse, DecryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DecryptDataOutput, DecryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DecryptDataInput, DecryptDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DecryptDataInput, DecryptDataOutputResponse>(xmlName: "DecryptDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, DecryptDataOutput, DecryptDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DecryptDataInput, DecryptDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DecryptDataInput, DecryptDataOutput>(xmlName: "DecryptDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DecryptDataOutputResponse, DecryptDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DecryptDataOutputResponse, DecryptDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DecryptDataOutputResponse, DecryptDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DecryptDataOutputResponse, DecryptDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DecryptDataOutput, DecryptDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DecryptDataOutput, DecryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DecryptDataOutput, DecryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DecryptDataOutput, DecryptDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -133,7 +142,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter EncryptDataInput : [no documentation found]
     ///
-    /// - Returns: `EncryptDataOutputResponse` : [no documentation found]
+    /// - Returns: `EncryptDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -143,7 +152,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func encryptData(input: EncryptDataInput) async throws -> EncryptDataOutputResponse
+    public func encryptData(input: EncryptDataInput) async throws -> EncryptDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -154,25 +163,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<EncryptDataInput, EncryptDataOutputResponse, EncryptDataOutputError>(id: "encryptData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<EncryptDataInput, EncryptDataOutputResponse, EncryptDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<EncryptDataInput, EncryptDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<EncryptDataInput, EncryptDataOutput, EncryptDataOutputError>(id: "encryptData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<EncryptDataInput, EncryptDataOutput, EncryptDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<EncryptDataInput, EncryptDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<EncryptDataOutputResponse, EncryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<EncryptDataOutput, EncryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<EncryptDataInput, EncryptDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<EncryptDataInput, EncryptDataOutputResponse>(xmlName: "EncryptDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, EncryptDataOutput, EncryptDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<EncryptDataInput, EncryptDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<EncryptDataInput, EncryptDataOutput>(xmlName: "EncryptDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, EncryptDataOutputResponse, EncryptDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<EncryptDataOutputResponse, EncryptDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<EncryptDataOutputResponse, EncryptDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<EncryptDataOutputResponse, EncryptDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, EncryptDataOutput, EncryptDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<EncryptDataOutput, EncryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<EncryptDataOutput, EncryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<EncryptDataOutput, EncryptDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -185,7 +197,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter GenerateCardValidationDataInput : [no documentation found]
     ///
-    /// - Returns: `GenerateCardValidationDataOutputResponse` : [no documentation found]
+    /// - Returns: `GenerateCardValidationDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -195,7 +207,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func generateCardValidationData(input: GenerateCardValidationDataInput) async throws -> GenerateCardValidationDataOutputResponse
+    public func generateCardValidationData(input: GenerateCardValidationDataInput) async throws -> GenerateCardValidationDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -206,25 +218,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GenerateCardValidationDataInput, GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>(id: "generateCardValidationData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GenerateCardValidationDataInput, GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>(id: "generateCardValidationData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutputResponse>(xmlName: "GenerateCardValidationDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GenerateCardValidationDataInput, GenerateCardValidationDataOutput>(xmlName: "GenerateCardValidationDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GenerateCardValidationDataOutputResponse, GenerateCardValidationDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GenerateCardValidationDataOutput, GenerateCardValidationDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -235,7 +250,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter GenerateMacInput : [no documentation found]
     ///
-    /// - Returns: `GenerateMacOutputResponse` : [no documentation found]
+    /// - Returns: `GenerateMacOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -245,7 +260,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func generateMac(input: GenerateMacInput) async throws -> GenerateMacOutputResponse
+    public func generateMac(input: GenerateMacInput) async throws -> GenerateMacOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -256,25 +271,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GenerateMacInput, GenerateMacOutputResponse, GenerateMacOutputError>(id: "generateMac")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GenerateMacInput, GenerateMacOutputResponse, GenerateMacOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GenerateMacInput, GenerateMacOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GenerateMacInput, GenerateMacOutput, GenerateMacOutputError>(id: "generateMac")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GenerateMacInput, GenerateMacOutput, GenerateMacOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GenerateMacInput, GenerateMacOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GenerateMacOutputResponse, GenerateMacOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GenerateMacOutput, GenerateMacOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GenerateMacInput, GenerateMacOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GenerateMacInput, GenerateMacOutputResponse>(xmlName: "GenerateMacInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, GenerateMacOutput, GenerateMacOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GenerateMacInput, GenerateMacOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GenerateMacInput, GenerateMacOutput>(xmlName: "GenerateMacInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GenerateMacOutputResponse, GenerateMacOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GenerateMacOutputResponse, GenerateMacOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GenerateMacOutputResponse, GenerateMacOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GenerateMacOutputResponse, GenerateMacOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GenerateMacOutput, GenerateMacOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GenerateMacOutput, GenerateMacOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GenerateMacOutput, GenerateMacOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GenerateMacOutput, GenerateMacOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -289,7 +307,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter GeneratePinDataInput : [no documentation found]
     ///
-    /// - Returns: `GeneratePinDataOutputResponse` : [no documentation found]
+    /// - Returns: `GeneratePinDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -299,7 +317,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func generatePinData(input: GeneratePinDataInput) async throws -> GeneratePinDataOutputResponse
+    public func generatePinData(input: GeneratePinDataInput) async throws -> GeneratePinDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -310,25 +328,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<GeneratePinDataInput, GeneratePinDataOutputResponse, GeneratePinDataOutputError>(id: "generatePinData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GeneratePinDataInput, GeneratePinDataOutputResponse, GeneratePinDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GeneratePinDataInput, GeneratePinDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<GeneratePinDataInput, GeneratePinDataOutput, GeneratePinDataOutputError>(id: "generatePinData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<GeneratePinDataInput, GeneratePinDataOutput, GeneratePinDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<GeneratePinDataInput, GeneratePinDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GeneratePinDataOutputResponse, GeneratePinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<GeneratePinDataOutput, GeneratePinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GeneratePinDataInput, GeneratePinDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GeneratePinDataInput, GeneratePinDataOutputResponse>(xmlName: "GeneratePinDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, GeneratePinDataOutput, GeneratePinDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<GeneratePinDataInput, GeneratePinDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<GeneratePinDataInput, GeneratePinDataOutput>(xmlName: "GeneratePinDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GeneratePinDataOutputResponse, GeneratePinDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<GeneratePinDataOutputResponse, GeneratePinDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GeneratePinDataOutputResponse, GeneratePinDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GeneratePinDataOutputResponse, GeneratePinDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, GeneratePinDataOutput, GeneratePinDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<GeneratePinDataOutput, GeneratePinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<GeneratePinDataOutput, GeneratePinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<GeneratePinDataOutput, GeneratePinDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -345,7 +366,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter ReEncryptDataInput : [no documentation found]
     ///
-    /// - Returns: `ReEncryptDataOutputResponse` : [no documentation found]
+    /// - Returns: `ReEncryptDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -355,7 +376,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func reEncryptData(input: ReEncryptDataInput) async throws -> ReEncryptDataOutputResponse
+    public func reEncryptData(input: ReEncryptDataInput) async throws -> ReEncryptDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -366,25 +387,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ReEncryptDataInput, ReEncryptDataOutputResponse, ReEncryptDataOutputError>(id: "reEncryptData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ReEncryptDataInput, ReEncryptDataOutputResponse, ReEncryptDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ReEncryptDataInput, ReEncryptDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ReEncryptDataInput, ReEncryptDataOutput, ReEncryptDataOutputError>(id: "reEncryptData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ReEncryptDataInput, ReEncryptDataOutput, ReEncryptDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ReEncryptDataInput, ReEncryptDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ReEncryptDataOutputResponse, ReEncryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ReEncryptDataOutput, ReEncryptDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ReEncryptDataInput, ReEncryptDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ReEncryptDataInput, ReEncryptDataOutputResponse>(xmlName: "ReEncryptDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, ReEncryptDataOutput, ReEncryptDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ReEncryptDataInput, ReEncryptDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ReEncryptDataInput, ReEncryptDataOutput>(xmlName: "ReEncryptDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ReEncryptDataOutputResponse, ReEncryptDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ReEncryptDataOutputResponse, ReEncryptDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ReEncryptDataOutputResponse, ReEncryptDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ReEncryptDataOutputResponse, ReEncryptDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ReEncryptDataOutput, ReEncryptDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ReEncryptDataOutput, ReEncryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ReEncryptDataOutput, ReEncryptDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ReEncryptDataOutput, ReEncryptDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -397,7 +421,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter TranslatePinDataInput : [no documentation found]
     ///
-    /// - Returns: `TranslatePinDataOutputResponse` : [no documentation found]
+    /// - Returns: `TranslatePinDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -407,7 +431,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ResourceNotFoundException` : The request was denied due to an invalid resource error.
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
-    public func translatePinData(input: TranslatePinDataInput) async throws -> TranslatePinDataOutputResponse
+    public func translatePinData(input: TranslatePinDataInput) async throws -> TranslatePinDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -418,25 +442,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TranslatePinDataInput, TranslatePinDataOutputResponse, TranslatePinDataOutputError>(id: "translatePinData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TranslatePinDataInput, TranslatePinDataOutputResponse, TranslatePinDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TranslatePinDataInput, TranslatePinDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TranslatePinDataInput, TranslatePinDataOutput, TranslatePinDataOutputError>(id: "translatePinData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TranslatePinDataInput, TranslatePinDataOutput, TranslatePinDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TranslatePinDataInput, TranslatePinDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TranslatePinDataOutputResponse, TranslatePinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TranslatePinDataOutput, TranslatePinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TranslatePinDataInput, TranslatePinDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TranslatePinDataInput, TranslatePinDataOutputResponse>(xmlName: "TranslatePinDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, TranslatePinDataOutput, TranslatePinDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TranslatePinDataInput, TranslatePinDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TranslatePinDataInput, TranslatePinDataOutput>(xmlName: "TranslatePinDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TranslatePinDataOutputResponse, TranslatePinDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TranslatePinDataOutputResponse, TranslatePinDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TranslatePinDataOutputResponse, TranslatePinDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TranslatePinDataOutputResponse, TranslatePinDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TranslatePinDataOutput, TranslatePinDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TranslatePinDataOutput, TranslatePinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TranslatePinDataOutput, TranslatePinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TranslatePinDataOutput, TranslatePinDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -449,7 +476,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter VerifyAuthRequestCryptogramInput : [no documentation found]
     ///
-    /// - Returns: `VerifyAuthRequestCryptogramOutputResponse` : [no documentation found]
+    /// - Returns: `VerifyAuthRequestCryptogramOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -460,7 +487,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
     /// - `VerificationFailedException` : This request failed verification.
-    public func verifyAuthRequestCryptogram(input: VerifyAuthRequestCryptogramInput) async throws -> VerifyAuthRequestCryptogramOutputResponse
+    public func verifyAuthRequestCryptogram(input: VerifyAuthRequestCryptogramInput) async throws -> VerifyAuthRequestCryptogramOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -471,25 +498,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>(id: "verifyAuthRequestCryptogram")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutputResponse>())
+        var operation = ClientRuntime.OperationStack<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>(id: "verifyAuthRequestCryptogram")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutputResponse>(xmlName: "VerifyAuthRequestCryptogramInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyAuthRequestCryptogramInput, VerifyAuthRequestCryptogramOutput>(xmlName: "VerifyAuthRequestCryptogramInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyAuthRequestCryptogramOutputResponse, VerifyAuthRequestCryptogramOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyAuthRequestCryptogramOutput, VerifyAuthRequestCryptogramOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -504,7 +534,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter VerifyCardValidationDataInput : [no documentation found]
     ///
-    /// - Returns: `VerifyCardValidationDataOutputResponse` : [no documentation found]
+    /// - Returns: `VerifyCardValidationDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -515,7 +545,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
     /// - `VerificationFailedException` : This request failed verification.
-    public func verifyCardValidationData(input: VerifyCardValidationDataInput) async throws -> VerifyCardValidationDataOutputResponse
+    public func verifyCardValidationData(input: VerifyCardValidationDataInput) async throws -> VerifyCardValidationDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -526,25 +556,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<VerifyCardValidationDataInput, VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>(id: "verifyCardValidationData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<VerifyCardValidationDataInput, VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>(id: "verifyCardValidationData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutputResponse>(xmlName: "VerifyCardValidationDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyCardValidationDataInput, VerifyCardValidationDataOutput>(xmlName: "VerifyCardValidationDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyCardValidationDataOutputResponse, VerifyCardValidationDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyCardValidationDataOutput, VerifyCardValidationDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -555,7 +588,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter VerifyMacInput : [no documentation found]
     ///
-    /// - Returns: `VerifyMacOutputResponse` : [no documentation found]
+    /// - Returns: `VerifyMacOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -566,7 +599,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
     /// - `VerificationFailedException` : This request failed verification.
-    public func verifyMac(input: VerifyMacInput) async throws -> VerifyMacOutputResponse
+    public func verifyMac(input: VerifyMacInput) async throws -> VerifyMacOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -577,25 +610,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<VerifyMacInput, VerifyMacOutputResponse, VerifyMacOutputError>(id: "verifyMac")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyMacInput, VerifyMacOutputResponse, VerifyMacOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyMacInput, VerifyMacOutputResponse>())
+        var operation = ClientRuntime.OperationStack<VerifyMacInput, VerifyMacOutput, VerifyMacOutputError>(id: "verifyMac")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyMacInput, VerifyMacOutput, VerifyMacOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyMacInput, VerifyMacOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyMacOutputResponse, VerifyMacOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyMacOutput, VerifyMacOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyMacInput, VerifyMacOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyMacInput, VerifyMacOutputResponse>(xmlName: "VerifyMacInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, VerifyMacOutput, VerifyMacOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyMacInput, VerifyMacOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyMacInput, VerifyMacOutput>(xmlName: "VerifyMacInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyMacOutputResponse, VerifyMacOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<VerifyMacOutputResponse, VerifyMacOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyMacOutputResponse, VerifyMacOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyMacOutputResponse, VerifyMacOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyMacOutput, VerifyMacOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<VerifyMacOutput, VerifyMacOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyMacOutput, VerifyMacOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyMacOutput, VerifyMacOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -608,7 +644,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     ///
     /// - Parameter VerifyPinDataInput : [no documentation found]
     ///
-    /// - Returns: `VerifyPinDataOutputResponse` : [no documentation found]
+    /// - Returns: `VerifyPinDataOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -619,7 +655,7 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
     /// - `ThrottlingException` : The request was denied due to request throttling.
     /// - `ValidationException` : The request was denied due to an invalid request error.
     /// - `VerificationFailedException` : This request failed verification.
-    public func verifyPinData(input: VerifyPinDataInput) async throws -> VerifyPinDataOutputResponse
+    public func verifyPinData(input: VerifyPinDataInput) async throws -> VerifyPinDataOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -630,25 +666,28 @@ extension PaymentCryptographyDataClient: PaymentCryptographyDataClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "payment-cryptography")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<VerifyPinDataInput, VerifyPinDataOutputResponse, VerifyPinDataOutputError>(id: "verifyPinData")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyPinDataInput, VerifyPinDataOutputResponse, VerifyPinDataOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyPinDataInput, VerifyPinDataOutputResponse>())
+        var operation = ClientRuntime.OperationStack<VerifyPinDataInput, VerifyPinDataOutput, VerifyPinDataOutputError>(id: "verifyPinData")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<VerifyPinDataInput, VerifyPinDataOutput, VerifyPinDataOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<VerifyPinDataInput, VerifyPinDataOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyPinDataOutputResponse, VerifyPinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<VerifyPinDataOutput, VerifyPinDataOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyPinDataInput, VerifyPinDataOutputResponse>(contentType: "application/json"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyPinDataInput, VerifyPinDataOutputResponse>(xmlName: "VerifyPinDataInput"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<PaymentCryptographyDataAuthSchemeResolver, VerifyPinDataOutput, VerifyPinDataOutputError>())
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<VerifyPinDataInput, VerifyPinDataOutput>(contentType: "application/json"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<VerifyPinDataInput, VerifyPinDataOutput>(xmlName: "VerifyPinDataInput"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyPinDataOutputResponse, VerifyPinDataOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<VerifyPinDataOutputResponse, VerifyPinDataOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyPinDataOutputResponse, VerifyPinDataOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyPinDataOutputResponse, VerifyPinDataOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, VerifyPinDataOutput, VerifyPinDataOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<VerifyPinDataOutput, VerifyPinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<VerifyPinDataOutput, VerifyPinDataOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<VerifyPinDataOutput, VerifyPinDataOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }

@@ -19,7 +19,7 @@ class GlacierAccountIdMiddleware(private val model: Model, private val symbolPro
 
     override val position = MiddlewarePosition.BEFORE
 
-    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String) {
+    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String, clientName: String?) {
         val outputShapeName = MiddlewareShapeUtils.outputSymbol(symbolProvider, model, op).name
         val outputErrorShapeName = MiddlewareShapeUtils.outputErrorSymbolName(op)
         val accountId = model.expectShape<StructureShape>(op.input.get()).members().first { it.memberName.lowercase() == "accountid" }

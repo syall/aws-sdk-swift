@@ -17,7 +17,7 @@ class PutObjectPresignedURLMiddlewareRenderable : MiddlewareRenderable {
 
     override val position = MiddlewarePosition.AFTER
 
-    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String) {
+    override fun render(writer: SwiftWriter, op: OperationShape, operationStackName: String, clientName: String?) {
         writer.write(
             "\$L.\$L.intercept(position: \$L, middleware: \$L())",
             operationStackName,

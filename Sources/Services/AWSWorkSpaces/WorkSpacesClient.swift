@@ -23,6 +23,9 @@ public class WorkSpacesClient {
         decoder.dateDecodingStrategy = .secondsSince1970
         decoder.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         self.decoder = config.decoder ?? decoder
+        var modeledAuthSchemes: [ClientRuntime.AuthScheme] = Array()
+        modeledAuthSchemes.append(SigV4AuthScheme())
+        config.authSchemes = config.authSchemes ?? modeledAuthSchemes
         self.config = config
     }
 
@@ -42,13 +45,16 @@ extension WorkSpacesClient {
 
     public struct ServiceSpecificConfiguration: AWSServiceSpecificConfiguration {
         public typealias AWSServiceEndpointResolver = EndpointResolver
+        public typealias AWSAuthSchemeResolver = WorkSpacesAuthSchemeResolver
 
         public var serviceName: String { "WorkSpaces" }
         public var clientName: String { "WorkSpacesClient" }
+        public var authSchemeResolver: any WorkSpacesAuthSchemeResolver
         public var endpointResolver: EndpointResolver
 
-        public init(endpointResolver: EndpointResolver? = nil) throws {
+        public init(endpointResolver: EndpointResolver? = nil, authSchemeResolver: (any WorkSpacesAuthSchemeResolver)? = nil) throws {
             self.endpointResolver = try endpointResolver ?? DefaultEndpointResolver()
+            self.authSchemeResolver = authSchemeResolver ?? DefaultWorkSpacesAuthSchemeResolver()
         }
     }
 }
@@ -71,7 +77,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter AssociateConnectionAliasInput : [no documentation found]
     ///
-    /// - Returns: `AssociateConnectionAliasOutputResponse` : [no documentation found]
+    /// - Returns: `AssociateConnectionAliasOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -82,7 +88,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func associateConnectionAlias(input: AssociateConnectionAliasInput) async throws -> AssociateConnectionAliasOutputResponse
+    public func associateConnectionAlias(input: AssociateConnectionAliasInput) async throws -> AssociateConnectionAliasOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -93,26 +99,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>(id: "associateConnectionAlias")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse>())
+        var operation = ClientRuntime.OperationStack<AssociateConnectionAliasInput, AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>(id: "associateConnectionAlias")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse>(xAmzTarget: "WorkspacesService.AssociateConnectionAlias"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse>(xmlName: "AssociateConnectionAliasRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutput>(xAmzTarget: "WorkspacesService.AssociateConnectionAlias"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutput>(xmlName: "AssociateConnectionAliasRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AssociateConnectionAliasInput, AssociateConnectionAliasOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AssociateConnectionAliasOutputResponse, AssociateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AssociateConnectionAliasOutput, AssociateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -121,7 +130,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter AssociateIpGroupsInput : [no documentation found]
     ///
-    /// - Returns: `AssociateIpGroupsOutputResponse` : [no documentation found]
+    /// - Returns: `AssociateIpGroupsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -132,7 +141,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func associateIpGroups(input: AssociateIpGroupsInput) async throws -> AssociateIpGroupsOutputResponse
+    public func associateIpGroups(input: AssociateIpGroupsInput) async throws -> AssociateIpGroupsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -143,26 +152,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>(id: "associateIpGroups")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<AssociateIpGroupsInput, AssociateIpGroupsOutput, AssociateIpGroupsOutputError>(id: "associateIpGroups")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutput, AssociateIpGroupsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AssociateIpGroupsOutput, AssociateIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse>(xAmzTarget: "WorkspacesService.AssociateIpGroups"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse>(xmlName: "AssociateIpGroupsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, AssociateIpGroupsOutput, AssociateIpGroupsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutput>(xAmzTarget: "WorkspacesService.AssociateIpGroups"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutput>(xmlName: "AssociateIpGroupsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AssociateIpGroupsInput, AssociateIpGroupsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AssociateIpGroupsOutputResponse, AssociateIpGroupsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AssociateIpGroupsOutput, AssociateIpGroupsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<AssociateIpGroupsOutput, AssociateIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AssociateIpGroupsOutput, AssociateIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AssociateIpGroupsOutput, AssociateIpGroupsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -171,7 +183,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter AuthorizeIpRulesInput : [no documentation found]
     ///
-    /// - Returns: `AuthorizeIpRulesOutputResponse` : [no documentation found]
+    /// - Returns: `AuthorizeIpRulesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -181,7 +193,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func authorizeIpRules(input: AuthorizeIpRulesInput) async throws -> AuthorizeIpRulesOutputResponse
+    public func authorizeIpRules(input: AuthorizeIpRulesInput) async throws -> AuthorizeIpRulesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -192,26 +204,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>(id: "authorizeIpRules")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<AuthorizeIpRulesInput, AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>(id: "authorizeIpRules")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse>(xAmzTarget: "WorkspacesService.AuthorizeIpRules"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse>(xmlName: "AuthorizeIpRulesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutput>(xAmzTarget: "WorkspacesService.AuthorizeIpRules"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutput>(xmlName: "AuthorizeIpRulesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<AuthorizeIpRulesInput, AuthorizeIpRulesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AuthorizeIpRulesOutputResponse, AuthorizeIpRulesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<AuthorizeIpRulesOutput, AuthorizeIpRulesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -220,7 +235,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CopyWorkspaceImageInput : [no documentation found]
     ///
-    /// - Returns: `CopyWorkspaceImageOutputResponse` : [no documentation found]
+    /// - Returns: `CopyWorkspaceImageOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -232,7 +247,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func copyWorkspaceImage(input: CopyWorkspaceImageInput) async throws -> CopyWorkspaceImageOutputResponse
+    public func copyWorkspaceImage(input: CopyWorkspaceImageInput) async throws -> CopyWorkspaceImageOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -243,26 +258,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>(id: "copyWorkspaceImage")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CopyWorkspaceImageInput, CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>(id: "copyWorkspaceImage")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse>(xAmzTarget: "WorkspacesService.CopyWorkspaceImage"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse>(xmlName: "CopyWorkspaceImageRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutput>(xAmzTarget: "WorkspacesService.CopyWorkspaceImage"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutput>(xmlName: "CopyWorkspaceImageRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CopyWorkspaceImageInput, CopyWorkspaceImageOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CopyWorkspaceImageOutputResponse, CopyWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CopyWorkspaceImageOutput, CopyWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -271,7 +289,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateConnectClientAddInInput : [no documentation found]
     ///
-    /// - Returns: `CreateConnectClientAddInOutputResponse` : [no documentation found]
+    /// - Returns: `CreateConnectClientAddInOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -281,7 +299,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceCreationFailedException` : The resource could not be created.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func createConnectClientAddIn(input: CreateConnectClientAddInInput) async throws -> CreateConnectClientAddInOutputResponse
+    public func createConnectClientAddIn(input: CreateConnectClientAddInInput) async throws -> CreateConnectClientAddInOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -292,26 +310,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>(id: "createConnectClientAddIn")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateConnectClientAddInInput, CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>(id: "createConnectClientAddIn")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse>(xAmzTarget: "WorkspacesService.CreateConnectClientAddIn"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse>(xmlName: "CreateConnectClientAddInRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutput>(xAmzTarget: "WorkspacesService.CreateConnectClientAddIn"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutput>(xmlName: "CreateConnectClientAddInRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateConnectClientAddInInput, CreateConnectClientAddInOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateConnectClientAddInOutputResponse, CreateConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateConnectClientAddInOutput, CreateConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -320,7 +341,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateConnectionAliasInput : [no documentation found]
     ///
-    /// - Returns: `CreateConnectionAliasOutputResponse` : [no documentation found]
+    /// - Returns: `CreateConnectionAliasOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -331,7 +352,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
-    public func createConnectionAlias(input: CreateConnectionAliasInput) async throws -> CreateConnectionAliasOutputResponse
+    public func createConnectionAlias(input: CreateConnectionAliasInput) async throws -> CreateConnectionAliasOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -342,26 +363,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>(id: "createConnectionAlias")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateConnectionAliasInput, CreateConnectionAliasOutput, CreateConnectionAliasOutputError>(id: "createConnectionAlias")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutput, CreateConnectionAliasOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateConnectionAliasOutput, CreateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse>(xAmzTarget: "WorkspacesService.CreateConnectionAlias"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse>(xmlName: "CreateConnectionAliasRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateConnectionAliasOutput, CreateConnectionAliasOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutput>(xAmzTarget: "WorkspacesService.CreateConnectionAlias"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutput>(xmlName: "CreateConnectionAliasRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateConnectionAliasInput, CreateConnectionAliasOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateConnectionAliasOutputResponse, CreateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateConnectionAliasOutput, CreateConnectionAliasOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateConnectionAliasOutput, CreateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateConnectionAliasOutput, CreateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateConnectionAliasOutput, CreateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -370,7 +394,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateIpGroupInput : [no documentation found]
     ///
-    /// - Returns: `CreateIpGroupOutputResponse` : [no documentation found]
+    /// - Returns: `CreateIpGroupOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -380,7 +404,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceCreationFailedException` : The resource could not be created.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
-    public func createIpGroup(input: CreateIpGroupInput) async throws -> CreateIpGroupOutputResponse
+    public func createIpGroup(input: CreateIpGroupInput) async throws -> CreateIpGroupOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -391,26 +415,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateIpGroupInput, CreateIpGroupOutputResponse, CreateIpGroupOutputError>(id: "createIpGroup")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateIpGroupInput, CreateIpGroupOutputResponse, CreateIpGroupOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateIpGroupInput, CreateIpGroupOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateIpGroupInput, CreateIpGroupOutput, CreateIpGroupOutputError>(id: "createIpGroup")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateIpGroupInput, CreateIpGroupOutput, CreateIpGroupOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateIpGroupInput, CreateIpGroupOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateIpGroupOutputResponse, CreateIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateIpGroupOutput, CreateIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateIpGroupInput, CreateIpGroupOutputResponse>(xAmzTarget: "WorkspacesService.CreateIpGroup"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateIpGroupInput, CreateIpGroupOutputResponse>(xmlName: "CreateIpGroupRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateIpGroupInput, CreateIpGroupOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateIpGroupOutput, CreateIpGroupOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateIpGroupInput, CreateIpGroupOutput>(xAmzTarget: "WorkspacesService.CreateIpGroup"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateIpGroupInput, CreateIpGroupOutput>(xmlName: "CreateIpGroupRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateIpGroupInput, CreateIpGroupOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateIpGroupOutputResponse, CreateIpGroupOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateIpGroupOutputResponse, CreateIpGroupOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateIpGroupOutputResponse, CreateIpGroupOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateIpGroupOutputResponse, CreateIpGroupOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateIpGroupOutput, CreateIpGroupOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateIpGroupOutput, CreateIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateIpGroupOutput, CreateIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateIpGroupOutput, CreateIpGroupOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -419,7 +446,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateStandbyWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `CreateStandbyWorkspacesOutputResponse` : [no documentation found]
+    /// - Returns: `CreateStandbyWorkspacesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -429,7 +456,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func createStandbyWorkspaces(input: CreateStandbyWorkspacesInput) async throws -> CreateStandbyWorkspacesOutputResponse
+    public func createStandbyWorkspaces(input: CreateStandbyWorkspacesInput) async throws -> CreateStandbyWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -440,26 +467,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>(id: "createStandbyWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>(id: "createStandbyWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.CreateStandbyWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse>(xmlName: "CreateStandbyWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput>(xAmzTarget: "WorkspacesService.CreateStandbyWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput>(xmlName: "CreateStandbyWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateStandbyWorkspacesInput, CreateStandbyWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateStandbyWorkspacesOutputResponse, CreateStandbyWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateStandbyWorkspacesOutput, CreateStandbyWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -468,7 +498,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateTagsInput : [no documentation found]
     ///
-    /// - Returns: `CreateTagsOutputResponse` : [no documentation found]
+    /// - Returns: `CreateTagsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -476,7 +506,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func createTags(input: CreateTagsInput) async throws -> CreateTagsOutputResponse
+    public func createTags(input: CreateTagsInput) async throws -> CreateTagsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -487,26 +517,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateTagsInput, CreateTagsOutputResponse, CreateTagsOutputError>(id: "createTags")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateTagsInput, CreateTagsOutputResponse, CreateTagsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateTagsInput, CreateTagsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateTagsInput, CreateTagsOutput, CreateTagsOutputError>(id: "createTags")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateTagsInput, CreateTagsOutput, CreateTagsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateTagsInput, CreateTagsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateTagsOutputResponse, CreateTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateTagsOutput, CreateTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateTagsInput, CreateTagsOutputResponse>(xAmzTarget: "WorkspacesService.CreateTags"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateTagsInput, CreateTagsOutputResponse>(xmlName: "CreateTagsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateTagsInput, CreateTagsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateTagsOutput, CreateTagsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateTagsInput, CreateTagsOutput>(xAmzTarget: "WorkspacesService.CreateTags"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateTagsInput, CreateTagsOutput>(xmlName: "CreateTagsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateTagsInput, CreateTagsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateTagsOutputResponse, CreateTagsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateTagsOutputResponse, CreateTagsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateTagsOutputResponse, CreateTagsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateTagsOutputResponse, CreateTagsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateTagsOutput, CreateTagsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateTagsOutput, CreateTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateTagsOutput, CreateTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateTagsOutput, CreateTagsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -521,7 +554,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateUpdatedWorkspaceImageInput : [no documentation found]
     ///
-    /// - Returns: `CreateUpdatedWorkspaceImageOutputResponse` : [no documentation found]
+    /// - Returns: `CreateUpdatedWorkspaceImageOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -533,7 +566,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func createUpdatedWorkspaceImage(input: CreateUpdatedWorkspaceImageInput) async throws -> CreateUpdatedWorkspaceImageOutputResponse
+    public func createUpdatedWorkspaceImage(input: CreateUpdatedWorkspaceImageInput) async throws -> CreateUpdatedWorkspaceImageOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -544,26 +577,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>(id: "createUpdatedWorkspaceImage")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>(id: "createUpdatedWorkspaceImage")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse>(xAmzTarget: "WorkspacesService.CreateUpdatedWorkspaceImage"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse>(xmlName: "CreateUpdatedWorkspaceImageRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput>(xAmzTarget: "WorkspacesService.CreateUpdatedWorkspaceImage"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput>(xmlName: "CreateUpdatedWorkspaceImageRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateUpdatedWorkspaceImageInput, CreateUpdatedWorkspaceImageOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateUpdatedWorkspaceImageOutputResponse, CreateUpdatedWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateUpdatedWorkspaceImageOutput, CreateUpdatedWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -572,7 +608,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateWorkspaceBundleInput : [no documentation found]
     ///
-    /// - Returns: `CreateWorkspaceBundleOutputResponse` : [no documentation found]
+    /// - Returns: `CreateWorkspaceBundleOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -583,7 +619,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func createWorkspaceBundle(input: CreateWorkspaceBundleInput) async throws -> CreateWorkspaceBundleOutputResponse
+    public func createWorkspaceBundle(input: CreateWorkspaceBundleInput) async throws -> CreateWorkspaceBundleOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -594,26 +630,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>(id: "createWorkspaceBundle")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>(id: "createWorkspaceBundle")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse>(xAmzTarget: "WorkspacesService.CreateWorkspaceBundle"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse>(xmlName: "CreateWorkspaceBundleRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput>(xAmzTarget: "WorkspacesService.CreateWorkspaceBundle"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput>(xmlName: "CreateWorkspaceBundleRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspaceBundleInput, CreateWorkspaceBundleOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspaceBundleOutputResponse, CreateWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspaceBundleOutput, CreateWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -622,7 +661,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateWorkspaceImageInput : [no documentation found]
     ///
-    /// - Returns: `CreateWorkspaceImageOutputResponse` : [no documentation found]
+    /// - Returns: `CreateWorkspaceImageOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -634,7 +673,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func createWorkspaceImage(input: CreateWorkspaceImageInput) async throws -> CreateWorkspaceImageOutputResponse
+    public func createWorkspaceImage(input: CreateWorkspaceImageInput) async throws -> CreateWorkspaceImageOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -645,26 +684,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>(id: "createWorkspaceImage")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateWorkspaceImageInput, CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>(id: "createWorkspaceImage")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse>(xAmzTarget: "WorkspacesService.CreateWorkspaceImage"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse>(xmlName: "CreateWorkspaceImageRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutput>(xAmzTarget: "WorkspacesService.CreateWorkspaceImage"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutput>(xmlName: "CreateWorkspaceImageRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspaceImageInput, CreateWorkspaceImageOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspaceImageOutputResponse, CreateWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspaceImageOutput, CreateWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -673,14 +715,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter CreateWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `CreateWorkspacesOutputResponse` : [no documentation found]
+    /// - Returns: `CreateWorkspacesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
-    public func createWorkspaces(input: CreateWorkspacesInput) async throws -> CreateWorkspacesOutputResponse
+    public func createWorkspaces(input: CreateWorkspacesInput) async throws -> CreateWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -691,26 +733,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<CreateWorkspacesInput, CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>(id: "createWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspacesInput, CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspacesInput, CreateWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<CreateWorkspacesInput, CreateWorkspacesOutput, CreateWorkspacesOutputError>(id: "createWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<CreateWorkspacesInput, CreateWorkspacesOutput, CreateWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<CreateWorkspacesInput, CreateWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<CreateWorkspacesOutput, CreateWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspacesInput, CreateWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.CreateWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspacesInput, CreateWorkspacesOutputResponse>(xmlName: "CreateWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspacesInput, CreateWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, CreateWorkspacesOutput, CreateWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<CreateWorkspacesInput, CreateWorkspacesOutput>(xAmzTarget: "WorkspacesService.CreateWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<CreateWorkspacesInput, CreateWorkspacesOutput>(xmlName: "CreateWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<CreateWorkspacesInput, CreateWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspacesOutputResponse, CreateWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, CreateWorkspacesOutput, CreateWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<CreateWorkspacesOutput, CreateWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<CreateWorkspacesOutput, CreateWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<CreateWorkspacesOutput, CreateWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -719,7 +764,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteClientBrandingInput : [no documentation found]
     ///
-    /// - Returns: `DeleteClientBrandingOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteClientBrandingOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -727,7 +772,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteClientBranding(input: DeleteClientBrandingInput) async throws -> DeleteClientBrandingOutputResponse
+    public func deleteClientBranding(input: DeleteClientBrandingInput) async throws -> DeleteClientBrandingOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -738,26 +783,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>(id: "deleteClientBranding")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteClientBrandingInput, DeleteClientBrandingOutput, DeleteClientBrandingOutputError>(id: "deleteClientBranding")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutput, DeleteClientBrandingOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteClientBrandingOutput, DeleteClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse>(xAmzTarget: "WorkspacesService.DeleteClientBranding"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse>(xmlName: "DeleteClientBrandingRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteClientBrandingOutput, DeleteClientBrandingOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutput>(xAmzTarget: "WorkspacesService.DeleteClientBranding"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutput>(xmlName: "DeleteClientBrandingRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteClientBrandingInput, DeleteClientBrandingOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteClientBrandingOutputResponse, DeleteClientBrandingOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteClientBrandingOutput, DeleteClientBrandingOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteClientBrandingOutput, DeleteClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteClientBrandingOutput, DeleteClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteClientBrandingOutput, DeleteClientBrandingOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -766,7 +814,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteConnectClientAddInInput : [no documentation found]
     ///
-    /// - Returns: `DeleteConnectClientAddInOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteConnectClientAddInOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -774,7 +822,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteConnectClientAddIn(input: DeleteConnectClientAddInInput) async throws -> DeleteConnectClientAddInOutputResponse
+    public func deleteConnectClientAddIn(input: DeleteConnectClientAddInInput) async throws -> DeleteConnectClientAddInOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -785,26 +833,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>(id: "deleteConnectClientAddIn")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>(id: "deleteConnectClientAddIn")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse>(xAmzTarget: "WorkspacesService.DeleteConnectClientAddIn"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse>(xmlName: "DeleteConnectClientAddInRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput>(xAmzTarget: "WorkspacesService.DeleteConnectClientAddIn"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput>(xmlName: "DeleteConnectClientAddInRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteConnectClientAddInInput, DeleteConnectClientAddInOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteConnectClientAddInOutputResponse, DeleteConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteConnectClientAddInOutput, DeleteConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -813,7 +864,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteConnectionAliasInput : [no documentation found]
     ///
-    /// - Returns: `DeleteConnectionAliasOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteConnectionAliasOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -824,7 +875,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteConnectionAlias(input: DeleteConnectionAliasInput) async throws -> DeleteConnectionAliasOutputResponse
+    public func deleteConnectionAlias(input: DeleteConnectionAliasInput) async throws -> DeleteConnectionAliasOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -835,26 +886,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>(id: "deleteConnectionAlias")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteConnectionAliasInput, DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>(id: "deleteConnectionAlias")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse>(xAmzTarget: "WorkspacesService.DeleteConnectionAlias"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse>(xmlName: "DeleteConnectionAliasRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutput>(xAmzTarget: "WorkspacesService.DeleteConnectionAlias"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutput>(xmlName: "DeleteConnectionAliasRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteConnectionAliasInput, DeleteConnectionAliasOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteConnectionAliasOutputResponse, DeleteConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteConnectionAliasOutput, DeleteConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -863,7 +917,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteIpGroupInput : [no documentation found]
     ///
-    /// - Returns: `DeleteIpGroupOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteIpGroupOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -872,7 +926,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteIpGroup(input: DeleteIpGroupInput) async throws -> DeleteIpGroupOutputResponse
+    public func deleteIpGroup(input: DeleteIpGroupInput) async throws -> DeleteIpGroupOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -883,26 +937,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteIpGroupInput, DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>(id: "deleteIpGroup")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteIpGroupInput, DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteIpGroupInput, DeleteIpGroupOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteIpGroupInput, DeleteIpGroupOutput, DeleteIpGroupOutputError>(id: "deleteIpGroup")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteIpGroupInput, DeleteIpGroupOutput, DeleteIpGroupOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteIpGroupInput, DeleteIpGroupOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteIpGroupOutput, DeleteIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteIpGroupInput, DeleteIpGroupOutputResponse>(xAmzTarget: "WorkspacesService.DeleteIpGroup"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteIpGroupInput, DeleteIpGroupOutputResponse>(xmlName: "DeleteIpGroupRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteIpGroupInput, DeleteIpGroupOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteIpGroupOutput, DeleteIpGroupOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteIpGroupInput, DeleteIpGroupOutput>(xAmzTarget: "WorkspacesService.DeleteIpGroup"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteIpGroupInput, DeleteIpGroupOutput>(xmlName: "DeleteIpGroupRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteIpGroupInput, DeleteIpGroupOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteIpGroupOutputResponse, DeleteIpGroupOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteIpGroupOutput, DeleteIpGroupOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteIpGroupOutput, DeleteIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteIpGroupOutput, DeleteIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteIpGroupOutput, DeleteIpGroupOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -911,14 +968,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteTagsInput : [no documentation found]
     ///
-    /// - Returns: `DeleteTagsOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteTagsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteTags(input: DeleteTagsInput) async throws -> DeleteTagsOutputResponse
+    public func deleteTags(input: DeleteTagsInput) async throws -> DeleteTagsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -929,26 +986,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteTagsInput, DeleteTagsOutputResponse, DeleteTagsOutputError>(id: "deleteTags")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteTagsInput, DeleteTagsOutputResponse, DeleteTagsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteTagsInput, DeleteTagsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteTagsInput, DeleteTagsOutput, DeleteTagsOutputError>(id: "deleteTags")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteTagsInput, DeleteTagsOutput, DeleteTagsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteTagsInput, DeleteTagsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteTagsOutputResponse, DeleteTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteTagsOutput, DeleteTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteTagsInput, DeleteTagsOutputResponse>(xAmzTarget: "WorkspacesService.DeleteTags"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteTagsInput, DeleteTagsOutputResponse>(xmlName: "DeleteTagsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteTagsInput, DeleteTagsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteTagsOutput, DeleteTagsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteTagsInput, DeleteTagsOutput>(xAmzTarget: "WorkspacesService.DeleteTags"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteTagsInput, DeleteTagsOutput>(xmlName: "DeleteTagsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteTagsInput, DeleteTagsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteTagsOutputResponse, DeleteTagsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteTagsOutputResponse, DeleteTagsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteTagsOutputResponse, DeleteTagsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteTagsOutputResponse, DeleteTagsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteTagsOutput, DeleteTagsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteTagsOutput, DeleteTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteTagsOutput, DeleteTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteTagsOutput, DeleteTagsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -957,7 +1017,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteWorkspaceBundleInput : [no documentation found]
     ///
-    /// - Returns: `DeleteWorkspaceBundleOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteWorkspaceBundleOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -966,7 +1026,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deleteWorkspaceBundle(input: DeleteWorkspaceBundleInput) async throws -> DeleteWorkspaceBundleOutputResponse
+    public func deleteWorkspaceBundle(input: DeleteWorkspaceBundleInput) async throws -> DeleteWorkspaceBundleOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -977,26 +1037,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>(id: "deleteWorkspaceBundle")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>(id: "deleteWorkspaceBundle")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse>(xAmzTarget: "WorkspacesService.DeleteWorkspaceBundle"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse>(xmlName: "DeleteWorkspaceBundleRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput>(xAmzTarget: "WorkspacesService.DeleteWorkspaceBundle"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput>(xmlName: "DeleteWorkspaceBundleRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteWorkspaceBundleInput, DeleteWorkspaceBundleOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteWorkspaceBundleOutputResponse, DeleteWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteWorkspaceBundleOutput, DeleteWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1005,7 +1068,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeleteWorkspaceImageInput : [no documentation found]
     ///
-    /// - Returns: `DeleteWorkspaceImageOutputResponse` : [no documentation found]
+    /// - Returns: `DeleteWorkspaceImageOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1013,7 +1076,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
-    public func deleteWorkspaceImage(input: DeleteWorkspaceImageInput) async throws -> DeleteWorkspaceImageOutputResponse
+    public func deleteWorkspaceImage(input: DeleteWorkspaceImageInput) async throws -> DeleteWorkspaceImageOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1024,26 +1087,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>(id: "deleteWorkspaceImage")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>(id: "deleteWorkspaceImage")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse>(xAmzTarget: "WorkspacesService.DeleteWorkspaceImage"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse>(xmlName: "DeleteWorkspaceImageRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput>(xAmzTarget: "WorkspacesService.DeleteWorkspaceImage"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput>(xmlName: "DeleteWorkspaceImageRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeleteWorkspaceImageInput, DeleteWorkspaceImageOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteWorkspaceImageOutputResponse, DeleteWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeleteWorkspaceImageOutput, DeleteWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1052,7 +1118,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DeregisterWorkspaceDirectoryInput : [no documentation found]
     ///
-    /// - Returns: `DeregisterWorkspaceDirectoryOutputResponse` : [no documentation found]
+    /// - Returns: `DeregisterWorkspaceDirectoryOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1062,7 +1128,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func deregisterWorkspaceDirectory(input: DeregisterWorkspaceDirectoryInput) async throws -> DeregisterWorkspaceDirectoryOutputResponse
+    public func deregisterWorkspaceDirectory(input: DeregisterWorkspaceDirectoryInput) async throws -> DeregisterWorkspaceDirectoryOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1073,26 +1139,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>(id: "deregisterWorkspaceDirectory")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>(id: "deregisterWorkspaceDirectory")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse>(xAmzTarget: "WorkspacesService.DeregisterWorkspaceDirectory"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse>(xmlName: "DeregisterWorkspaceDirectoryRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput>(xAmzTarget: "WorkspacesService.DeregisterWorkspaceDirectory"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput>(xmlName: "DeregisterWorkspaceDirectoryRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DeregisterWorkspaceDirectoryInput, DeregisterWorkspaceDirectoryOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeregisterWorkspaceDirectoryOutputResponse, DeregisterWorkspaceDirectoryOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DeregisterWorkspaceDirectoryOutput, DeregisterWorkspaceDirectoryOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1101,13 +1170,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeAccountInput : [no documentation found]
     ///
-    /// - Returns: `DescribeAccountOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeAccountOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
-    public func describeAccount(input: DescribeAccountInput) async throws -> DescribeAccountOutputResponse
+    public func describeAccount(input: DescribeAccountInput) async throws -> DescribeAccountOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1118,26 +1187,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeAccountInput, DescribeAccountOutputResponse, DescribeAccountOutputError>(id: "describeAccount")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeAccountInput, DescribeAccountOutputResponse, DescribeAccountOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeAccountInput, DescribeAccountOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeAccountInput, DescribeAccountOutput, DescribeAccountOutputError>(id: "describeAccount")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeAccountInput, DescribeAccountOutput, DescribeAccountOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeAccountInput, DescribeAccountOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeAccountOutputResponse, DescribeAccountOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeAccountOutput, DescribeAccountOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeAccountInput, DescribeAccountOutputResponse>(xAmzTarget: "WorkspacesService.DescribeAccount"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeAccountInput, DescribeAccountOutputResponse>(xmlName: "DescribeAccountRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeAccountInput, DescribeAccountOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeAccountOutput, DescribeAccountOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeAccountInput, DescribeAccountOutput>(xAmzTarget: "WorkspacesService.DescribeAccount"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeAccountInput, DescribeAccountOutput>(xmlName: "DescribeAccountRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeAccountInput, DescribeAccountOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeAccountOutputResponse, DescribeAccountOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeAccountOutputResponse, DescribeAccountOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeAccountOutputResponse, DescribeAccountOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeAccountOutputResponse, DescribeAccountOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeAccountOutput, DescribeAccountOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeAccountOutput, DescribeAccountOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeAccountOutput, DescribeAccountOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeAccountOutput, DescribeAccountOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1146,13 +1218,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeAccountModificationsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeAccountModificationsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeAccountModificationsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
-    public func describeAccountModifications(input: DescribeAccountModificationsInput) async throws -> DescribeAccountModificationsOutputResponse
+    public func describeAccountModifications(input: DescribeAccountModificationsInput) async throws -> DescribeAccountModificationsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1163,26 +1235,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>(id: "describeAccountModifications")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeAccountModificationsInput, DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>(id: "describeAccountModifications")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeAccountModifications"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse>(xmlName: "DescribeAccountModificationsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutput>(xAmzTarget: "WorkspacesService.DescribeAccountModifications"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutput>(xmlName: "DescribeAccountModificationsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeAccountModificationsInput, DescribeAccountModificationsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeAccountModificationsOutputResponse, DescribeAccountModificationsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeAccountModificationsOutput, DescribeAccountModificationsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1191,7 +1266,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeClientBrandingInput : [no documentation found]
     ///
-    /// - Returns: `DescribeClientBrandingOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeClientBrandingOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1199,7 +1274,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeClientBranding(input: DescribeClientBrandingInput) async throws -> DescribeClientBrandingOutputResponse
+    public func describeClientBranding(input: DescribeClientBrandingInput) async throws -> DescribeClientBrandingOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1210,26 +1285,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>(id: "describeClientBranding")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeClientBrandingInput, DescribeClientBrandingOutput, DescribeClientBrandingOutputError>(id: "describeClientBranding")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutput, DescribeClientBrandingOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeClientBrandingOutput, DescribeClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse>(xAmzTarget: "WorkspacesService.DescribeClientBranding"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse>(xmlName: "DescribeClientBrandingRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeClientBrandingOutput, DescribeClientBrandingOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutput>(xAmzTarget: "WorkspacesService.DescribeClientBranding"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutput>(xmlName: "DescribeClientBrandingRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeClientBrandingInput, DescribeClientBrandingOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeClientBrandingOutputResponse, DescribeClientBrandingOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeClientBrandingOutput, DescribeClientBrandingOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeClientBrandingOutput, DescribeClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeClientBrandingOutput, DescribeClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeClientBrandingOutput, DescribeClientBrandingOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1238,7 +1316,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeClientPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeClientPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeClientPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1246,7 +1324,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeClientProperties(input: DescribeClientPropertiesInput) async throws -> DescribeClientPropertiesOutputResponse
+    public func describeClientProperties(input: DescribeClientPropertiesInput) async throws -> DescribeClientPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1257,26 +1335,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>(id: "describeClientProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeClientPropertiesInput, DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>(id: "describeClientProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeClientProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse>(xmlName: "DescribeClientPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutput>(xAmzTarget: "WorkspacesService.DescribeClientProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutput>(xmlName: "DescribeClientPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeClientPropertiesInput, DescribeClientPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeClientPropertiesOutputResponse, DescribeClientPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeClientPropertiesOutput, DescribeClientPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1285,7 +1366,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeConnectClientAddInsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeConnectClientAddInsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeConnectClientAddInsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1293,7 +1374,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeConnectClientAddIns(input: DescribeConnectClientAddInsInput) async throws -> DescribeConnectClientAddInsOutputResponse
+    public func describeConnectClientAddIns(input: DescribeConnectClientAddInsInput) async throws -> DescribeConnectClientAddInsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1304,26 +1385,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>(id: "describeConnectClientAddIns")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>(id: "describeConnectClientAddIns")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeConnectClientAddIns"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse>(xmlName: "DescribeConnectClientAddInsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput>(xAmzTarget: "WorkspacesService.DescribeConnectClientAddIns"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput>(xmlName: "DescribeConnectClientAddInsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectClientAddInsInput, DescribeConnectClientAddInsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectClientAddInsOutputResponse, DescribeConnectClientAddInsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectClientAddInsOutput, DescribeConnectClientAddInsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1332,7 +1416,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeConnectionAliasPermissionsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeConnectionAliasPermissionsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeConnectionAliasPermissionsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1341,7 +1425,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeConnectionAliasPermissions(input: DescribeConnectionAliasPermissionsInput) async throws -> DescribeConnectionAliasPermissionsOutputResponse
+    public func describeConnectionAliasPermissions(input: DescribeConnectionAliasPermissionsInput) async throws -> DescribeConnectionAliasPermissionsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1352,26 +1436,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>(id: "describeConnectionAliasPermissions")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>(id: "describeConnectionAliasPermissions")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeConnectionAliasPermissions"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse>(xmlName: "DescribeConnectionAliasPermissionsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput>(xAmzTarget: "WorkspacesService.DescribeConnectionAliasPermissions"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput>(xmlName: "DescribeConnectionAliasPermissionsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectionAliasPermissionsInput, DescribeConnectionAliasPermissionsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectionAliasPermissionsOutputResponse, DescribeConnectionAliasPermissionsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectionAliasPermissionsOutput, DescribeConnectionAliasPermissionsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1380,7 +1467,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeConnectionAliasesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeConnectionAliasesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeConnectionAliasesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1388,7 +1475,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
-    public func describeConnectionAliases(input: DescribeConnectionAliasesInput) async throws -> DescribeConnectionAliasesOutputResponse
+    public func describeConnectionAliases(input: DescribeConnectionAliasesInput) async throws -> DescribeConnectionAliasesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1399,26 +1486,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>(id: "describeConnectionAliases")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>(id: "describeConnectionAliases")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeConnectionAliases"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse>(xmlName: "DescribeConnectionAliasesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput>(xAmzTarget: "WorkspacesService.DescribeConnectionAliases"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput>(xmlName: "DescribeConnectionAliasesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeConnectionAliasesInput, DescribeConnectionAliasesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectionAliasesOutputResponse, DescribeConnectionAliasesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeConnectionAliasesOutput, DescribeConnectionAliasesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1427,14 +1517,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeIpGroupsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeIpGroupsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeIpGroupsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
-    public func describeIpGroups(input: DescribeIpGroupsInput) async throws -> DescribeIpGroupsOutputResponse
+    public func describeIpGroups(input: DescribeIpGroupsInput) async throws -> DescribeIpGroupsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1445,26 +1535,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>(id: "describeIpGroups")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeIpGroupsInput, DescribeIpGroupsOutput, DescribeIpGroupsOutputError>(id: "describeIpGroups")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutput, DescribeIpGroupsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeIpGroupsOutput, DescribeIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeIpGroups"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse>(xmlName: "DescribeIpGroupsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeIpGroupsOutput, DescribeIpGroupsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutput>(xAmzTarget: "WorkspacesService.DescribeIpGroups"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutput>(xmlName: "DescribeIpGroupsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeIpGroupsInput, DescribeIpGroupsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeIpGroupsOutputResponse, DescribeIpGroupsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeIpGroupsOutput, DescribeIpGroupsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeIpGroupsOutput, DescribeIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeIpGroupsOutput, DescribeIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeIpGroupsOutput, DescribeIpGroupsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1473,13 +1566,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeTagsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeTagsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeTagsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeTags(input: DescribeTagsInput) async throws -> DescribeTagsOutputResponse
+    public func describeTags(input: DescribeTagsInput) async throws -> DescribeTagsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1490,26 +1583,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeTagsInput, DescribeTagsOutputResponse, DescribeTagsOutputError>(id: "describeTags")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeTagsInput, DescribeTagsOutputResponse, DescribeTagsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeTagsInput, DescribeTagsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeTagsInput, DescribeTagsOutput, DescribeTagsOutputError>(id: "describeTags")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeTagsInput, DescribeTagsOutput, DescribeTagsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeTagsInput, DescribeTagsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeTagsOutputResponse, DescribeTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeTagsOutput, DescribeTagsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeTagsInput, DescribeTagsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeTags"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeTagsInput, DescribeTagsOutputResponse>(xmlName: "DescribeTagsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeTagsInput, DescribeTagsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeTagsOutput, DescribeTagsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeTagsInput, DescribeTagsOutput>(xAmzTarget: "WorkspacesService.DescribeTags"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeTagsInput, DescribeTagsOutput>(xmlName: "DescribeTagsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeTagsInput, DescribeTagsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeTagsOutputResponse, DescribeTagsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeTagsOutputResponse, DescribeTagsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeTagsOutputResponse, DescribeTagsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeTagsOutputResponse, DescribeTagsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeTagsOutput, DescribeTagsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeTagsOutput, DescribeTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeTagsOutput, DescribeTagsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeTagsOutput, DescribeTagsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1518,13 +1614,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspaceBundlesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspaceBundlesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspaceBundlesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
-    public func describeWorkspaceBundles(input: DescribeWorkspaceBundlesInput) async throws -> DescribeWorkspaceBundlesOutputResponse
+    public func describeWorkspaceBundles(input: DescribeWorkspaceBundlesInput) async throws -> DescribeWorkspaceBundlesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1535,26 +1631,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>(id: "describeWorkspaceBundles")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>(id: "describeWorkspaceBundles")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaceBundles"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse>(xmlName: "DescribeWorkspaceBundlesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaceBundles"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput>(xmlName: "DescribeWorkspaceBundlesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceBundlesInput, DescribeWorkspaceBundlesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceBundlesOutputResponse, DescribeWorkspaceBundlesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceBundlesOutput, DescribeWorkspaceBundlesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1563,13 +1662,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspaceDirectoriesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspaceDirectoriesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspaceDirectoriesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
-    public func describeWorkspaceDirectories(input: DescribeWorkspaceDirectoriesInput) async throws -> DescribeWorkspaceDirectoriesOutputResponse
+    public func describeWorkspaceDirectories(input: DescribeWorkspaceDirectoriesInput) async throws -> DescribeWorkspaceDirectoriesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1580,26 +1679,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>(id: "describeWorkspaceDirectories")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>(id: "describeWorkspaceDirectories")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaceDirectories"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse>(xmlName: "DescribeWorkspaceDirectoriesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaceDirectories"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput>(xmlName: "DescribeWorkspaceDirectoriesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceDirectoriesInput, DescribeWorkspaceDirectoriesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceDirectoriesOutputResponse, DescribeWorkspaceDirectoriesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceDirectoriesOutput, DescribeWorkspaceDirectoriesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1608,7 +1710,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspaceImagePermissionsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspaceImagePermissionsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspaceImagePermissionsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1616,7 +1718,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeWorkspaceImagePermissions(input: DescribeWorkspaceImagePermissionsInput) async throws -> DescribeWorkspaceImagePermissionsOutputResponse
+    public func describeWorkspaceImagePermissions(input: DescribeWorkspaceImagePermissionsInput) async throws -> DescribeWorkspaceImagePermissionsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1627,26 +1729,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>(id: "describeWorkspaceImagePermissions")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>(id: "describeWorkspaceImagePermissions")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaceImagePermissions"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse>(xmlName: "DescribeWorkspaceImagePermissionsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaceImagePermissions"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput>(xmlName: "DescribeWorkspaceImagePermissionsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceImagePermissionsInput, DescribeWorkspaceImagePermissionsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceImagePermissionsOutputResponse, DescribeWorkspaceImagePermissionsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceImagePermissionsOutput, DescribeWorkspaceImagePermissionsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1655,13 +1760,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspaceImagesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspaceImagesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspaceImagesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
-    public func describeWorkspaceImages(input: DescribeWorkspaceImagesInput) async throws -> DescribeWorkspaceImagesOutputResponse
+    public func describeWorkspaceImages(input: DescribeWorkspaceImagesInput) async throws -> DescribeWorkspaceImagesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1672,26 +1777,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>(id: "describeWorkspaceImages")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>(id: "describeWorkspaceImages")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaceImages"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse>(xmlName: "DescribeWorkspaceImagesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaceImages"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput>(xmlName: "DescribeWorkspaceImagesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceImagesInput, DescribeWorkspaceImagesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceImagesOutputResponse, DescribeWorkspaceImagesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceImagesOutput, DescribeWorkspaceImagesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1700,7 +1808,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspaceSnapshotsInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspaceSnapshotsOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspaceSnapshotsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1708,7 +1816,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func describeWorkspaceSnapshots(input: DescribeWorkspaceSnapshotsInput) async throws -> DescribeWorkspaceSnapshotsOutputResponse
+    public func describeWorkspaceSnapshots(input: DescribeWorkspaceSnapshotsInput) async throws -> DescribeWorkspaceSnapshotsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1719,26 +1827,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>(id: "describeWorkspaceSnapshots")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>(id: "describeWorkspaceSnapshots")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaceSnapshots"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse>(xmlName: "DescribeWorkspaceSnapshotsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaceSnapshots"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput>(xmlName: "DescribeWorkspaceSnapshotsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspaceSnapshotsInput, DescribeWorkspaceSnapshotsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceSnapshotsOutputResponse, DescribeWorkspaceSnapshotsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspaceSnapshotsOutput, DescribeWorkspaceSnapshotsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1747,14 +1858,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspacesOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspacesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func describeWorkspaces(input: DescribeWorkspacesInput) async throws -> DescribeWorkspacesOutputResponse
+    public func describeWorkspaces(input: DescribeWorkspacesInput) async throws -> DescribeWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1765,26 +1876,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>(id: "describeWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspacesInput, DescribeWorkspacesOutput, DescribeWorkspacesOutputError>(id: "describeWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutput, DescribeWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspacesOutput, DescribeWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse>(xmlName: "DescribeWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspacesOutput, DescribeWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutput>(xmlName: "DescribeWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspacesInput, DescribeWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspacesOutputResponse, DescribeWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspacesOutput, DescribeWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspacesOutput, DescribeWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspacesOutput, DescribeWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspacesOutput, DescribeWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1793,13 +1907,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DescribeWorkspacesConnectionStatusInput : [no documentation found]
     ///
-    /// - Returns: `DescribeWorkspacesConnectionStatusOutputResponse` : [no documentation found]
+    /// - Returns: `DescribeWorkspacesConnectionStatusOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
-    public func describeWorkspacesConnectionStatus(input: DescribeWorkspacesConnectionStatusInput) async throws -> DescribeWorkspacesConnectionStatusOutputResponse
+    public func describeWorkspacesConnectionStatus(input: DescribeWorkspacesConnectionStatusInput) async throws -> DescribeWorkspacesConnectionStatusOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1810,26 +1924,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>(id: "describeWorkspacesConnectionStatus")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>(id: "describeWorkspacesConnectionStatus")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse>(xAmzTarget: "WorkspacesService.DescribeWorkspacesConnectionStatus"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse>(xmlName: "DescribeWorkspacesConnectionStatusRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput>(xAmzTarget: "WorkspacesService.DescribeWorkspacesConnectionStatus"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput>(xmlName: "DescribeWorkspacesConnectionStatusRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DescribeWorkspacesConnectionStatusInput, DescribeWorkspacesConnectionStatusOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspacesConnectionStatusOutputResponse, DescribeWorkspacesConnectionStatusOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DescribeWorkspacesConnectionStatusOutput, DescribeWorkspacesConnectionStatusOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1838,7 +1955,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DisassociateConnectionAliasInput : [no documentation found]
     ///
-    /// - Returns: `DisassociateConnectionAliasOutputResponse` : [no documentation found]
+    /// - Returns: `DisassociateConnectionAliasOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1848,7 +1965,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func disassociateConnectionAlias(input: DisassociateConnectionAliasInput) async throws -> DisassociateConnectionAliasOutputResponse
+    public func disassociateConnectionAlias(input: DisassociateConnectionAliasInput) async throws -> DisassociateConnectionAliasOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1859,26 +1976,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>(id: "disassociateConnectionAlias")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>(id: "disassociateConnectionAlias")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse>(xAmzTarget: "WorkspacesService.DisassociateConnectionAlias"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse>(xmlName: "DisassociateConnectionAliasRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput>(xAmzTarget: "WorkspacesService.DisassociateConnectionAlias"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput>(xmlName: "DisassociateConnectionAliasRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DisassociateConnectionAliasInput, DisassociateConnectionAliasOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DisassociateConnectionAliasOutputResponse, DisassociateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DisassociateConnectionAliasOutput, DisassociateConnectionAliasOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1887,7 +2007,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter DisassociateIpGroupsInput : [no documentation found]
     ///
-    /// - Returns: `DisassociateIpGroupsOutputResponse` : [no documentation found]
+    /// - Returns: `DisassociateIpGroupsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1896,7 +2016,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func disassociateIpGroups(input: DisassociateIpGroupsInput) async throws -> DisassociateIpGroupsOutputResponse
+    public func disassociateIpGroups(input: DisassociateIpGroupsInput) async throws -> DisassociateIpGroupsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1907,26 +2027,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>(id: "disassociateIpGroups")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<DisassociateIpGroupsInput, DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>(id: "disassociateIpGroups")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse>(xAmzTarget: "WorkspacesService.DisassociateIpGroups"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse>(xmlName: "DisassociateIpGroupsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutput>(xAmzTarget: "WorkspacesService.DisassociateIpGroups"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutput>(xmlName: "DisassociateIpGroupsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<DisassociateIpGroupsInput, DisassociateIpGroupsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DisassociateIpGroupsOutputResponse, DisassociateIpGroupsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<DisassociateIpGroupsOutput, DisassociateIpGroupsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1943,7 +2066,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ImportClientBrandingInput : [no documentation found]
     ///
-    /// - Returns: `ImportClientBrandingOutputResponse` : [no documentation found]
+    /// - Returns: `ImportClientBrandingOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -1952,7 +2075,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func importClientBranding(input: ImportClientBrandingInput) async throws -> ImportClientBrandingOutputResponse
+    public func importClientBranding(input: ImportClientBrandingInput) async throws -> ImportClientBrandingOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -1963,26 +2086,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ImportClientBrandingInput, ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>(id: "importClientBranding")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportClientBrandingInput, ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportClientBrandingInput, ImportClientBrandingOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ImportClientBrandingInput, ImportClientBrandingOutput, ImportClientBrandingOutputError>(id: "importClientBranding")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportClientBrandingInput, ImportClientBrandingOutput, ImportClientBrandingOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportClientBrandingInput, ImportClientBrandingOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportClientBrandingOutput, ImportClientBrandingOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportClientBrandingInput, ImportClientBrandingOutputResponse>(xAmzTarget: "WorkspacesService.ImportClientBranding"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportClientBrandingInput, ImportClientBrandingOutputResponse>(xmlName: "ImportClientBrandingRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportClientBrandingInput, ImportClientBrandingOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ImportClientBrandingOutput, ImportClientBrandingOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportClientBrandingInput, ImportClientBrandingOutput>(xAmzTarget: "WorkspacesService.ImportClientBranding"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportClientBrandingInput, ImportClientBrandingOutput>(xmlName: "ImportClientBrandingRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportClientBrandingInput, ImportClientBrandingOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportClientBrandingOutputResponse, ImportClientBrandingOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportClientBrandingOutput, ImportClientBrandingOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ImportClientBrandingOutput, ImportClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportClientBrandingOutput, ImportClientBrandingOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportClientBrandingOutput, ImportClientBrandingOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -1991,7 +2117,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ImportWorkspaceImageInput : [no documentation found]
     ///
-    /// - Returns: `ImportWorkspaceImageOutputResponse` : [no documentation found]
+    /// - Returns: `ImportWorkspaceImageOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2002,7 +2128,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAlreadyExistsException` : The specified resource already exists.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func importWorkspaceImage(input: ImportWorkspaceImageInput) async throws -> ImportWorkspaceImageOutputResponse
+    public func importWorkspaceImage(input: ImportWorkspaceImageInput) async throws -> ImportWorkspaceImageOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2013,26 +2139,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>(id: "importWorkspaceImage")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ImportWorkspaceImageInput, ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>(id: "importWorkspaceImage")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse>(xAmzTarget: "WorkspacesService.ImportWorkspaceImage"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse>(xmlName: "ImportWorkspaceImageRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutput>(xAmzTarget: "WorkspacesService.ImportWorkspaceImage"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutput>(xmlName: "ImportWorkspaceImageRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ImportWorkspaceImageInput, ImportWorkspaceImageOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportWorkspaceImageOutputResponse, ImportWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ImportWorkspaceImageOutput, ImportWorkspaceImageOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2041,14 +2170,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ListAvailableManagementCidrRangesInput : [no documentation found]
     ///
-    /// - Returns: `ListAvailableManagementCidrRangesOutputResponse` : [no documentation found]
+    /// - Returns: `ListAvailableManagementCidrRangesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
-    public func listAvailableManagementCidrRanges(input: ListAvailableManagementCidrRangesInput) async throws -> ListAvailableManagementCidrRangesOutputResponse
+    public func listAvailableManagementCidrRanges(input: ListAvailableManagementCidrRangesInput) async throws -> ListAvailableManagementCidrRangesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2059,26 +2188,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>(id: "listAvailableManagementCidrRanges")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>(id: "listAvailableManagementCidrRanges")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse>(xAmzTarget: "WorkspacesService.ListAvailableManagementCidrRanges"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse>(xmlName: "ListAvailableManagementCidrRangesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput>(xAmzTarget: "WorkspacesService.ListAvailableManagementCidrRanges"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput>(xmlName: "ListAvailableManagementCidrRangesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ListAvailableManagementCidrRangesInput, ListAvailableManagementCidrRangesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListAvailableManagementCidrRangesOutputResponse, ListAvailableManagementCidrRangesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ListAvailableManagementCidrRangesOutput, ListAvailableManagementCidrRangesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2087,7 +2219,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter MigrateWorkspaceInput : [no documentation found]
     ///
-    /// - Returns: `MigrateWorkspaceOutputResponse` : [no documentation found]
+    /// - Returns: `MigrateWorkspaceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2098,7 +2230,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func migrateWorkspace(input: MigrateWorkspaceInput) async throws -> MigrateWorkspaceOutputResponse
+    public func migrateWorkspace(input: MigrateWorkspaceInput) async throws -> MigrateWorkspaceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2109,26 +2241,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>(id: "migrateWorkspace")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<MigrateWorkspaceInput, MigrateWorkspaceOutput, MigrateWorkspaceOutputError>(id: "migrateWorkspace")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutput, MigrateWorkspaceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<MigrateWorkspaceOutput, MigrateWorkspaceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse>(xAmzTarget: "WorkspacesService.MigrateWorkspace"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse>(xmlName: "MigrateWorkspaceRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, MigrateWorkspaceOutput, MigrateWorkspaceOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutput>(xAmzTarget: "WorkspacesService.MigrateWorkspace"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutput>(xmlName: "MigrateWorkspaceRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<MigrateWorkspaceInput, MigrateWorkspaceOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<MigrateWorkspaceOutputResponse, MigrateWorkspaceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, MigrateWorkspaceOutput, MigrateWorkspaceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<MigrateWorkspaceOutput, MigrateWorkspaceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<MigrateWorkspaceOutput, MigrateWorkspaceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<MigrateWorkspaceOutput, MigrateWorkspaceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2137,7 +2272,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyAccountInput : [no documentation found]
     ///
-    /// - Returns: `ModifyAccountOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyAccountOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2147,7 +2282,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func modifyAccount(input: ModifyAccountInput) async throws -> ModifyAccountOutputResponse
+    public func modifyAccount(input: ModifyAccountInput) async throws -> ModifyAccountOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2158,26 +2293,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyAccountInput, ModifyAccountOutputResponse, ModifyAccountOutputError>(id: "modifyAccount")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyAccountInput, ModifyAccountOutputResponse, ModifyAccountOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyAccountInput, ModifyAccountOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyAccountInput, ModifyAccountOutput, ModifyAccountOutputError>(id: "modifyAccount")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyAccountInput, ModifyAccountOutput, ModifyAccountOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyAccountInput, ModifyAccountOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyAccountOutputResponse, ModifyAccountOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyAccountOutput, ModifyAccountOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyAccountInput, ModifyAccountOutputResponse>(xAmzTarget: "WorkspacesService.ModifyAccount"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyAccountInput, ModifyAccountOutputResponse>(xmlName: "ModifyAccountRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyAccountInput, ModifyAccountOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyAccountOutput, ModifyAccountOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyAccountInput, ModifyAccountOutput>(xAmzTarget: "WorkspacesService.ModifyAccount"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyAccountInput, ModifyAccountOutput>(xmlName: "ModifyAccountRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyAccountInput, ModifyAccountOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyAccountOutputResponse, ModifyAccountOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyAccountOutputResponse, ModifyAccountOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyAccountOutputResponse, ModifyAccountOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyAccountOutputResponse, ModifyAccountOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyAccountOutput, ModifyAccountOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyAccountOutput, ModifyAccountOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyAccountOutput, ModifyAccountOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyAccountOutput, ModifyAccountOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2186,7 +2324,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyCertificateBasedAuthPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifyCertificateBasedAuthPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyCertificateBasedAuthPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2195,7 +2333,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifyCertificateBasedAuthProperties(input: ModifyCertificateBasedAuthPropertiesInput) async throws -> ModifyCertificateBasedAuthPropertiesOutputResponse
+    public func modifyCertificateBasedAuthProperties(input: ModifyCertificateBasedAuthPropertiesInput) async throws -> ModifyCertificateBasedAuthPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2206,26 +2344,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>(id: "modifyCertificateBasedAuthProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>(id: "modifyCertificateBasedAuthProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifyCertificateBasedAuthProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse>(xmlName: "ModifyCertificateBasedAuthPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput>(xAmzTarget: "WorkspacesService.ModifyCertificateBasedAuthProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput>(xmlName: "ModifyCertificateBasedAuthPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyCertificateBasedAuthPropertiesInput, ModifyCertificateBasedAuthPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyCertificateBasedAuthPropertiesOutputResponse, ModifyCertificateBasedAuthPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyCertificateBasedAuthPropertiesOutput, ModifyCertificateBasedAuthPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2234,7 +2375,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyClientPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifyClientPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyClientPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2242,7 +2383,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifyClientProperties(input: ModifyClientPropertiesInput) async throws -> ModifyClientPropertiesOutputResponse
+    public func modifyClientProperties(input: ModifyClientPropertiesInput) async throws -> ModifyClientPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2253,26 +2394,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>(id: "modifyClientProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyClientPropertiesInput, ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>(id: "modifyClientProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifyClientProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse>(xmlName: "ModifyClientPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutput>(xAmzTarget: "WorkspacesService.ModifyClientProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutput>(xmlName: "ModifyClientPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyClientPropertiesInput, ModifyClientPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyClientPropertiesOutputResponse, ModifyClientPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyClientPropertiesOutput, ModifyClientPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2281,7 +2425,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifySamlPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifySamlPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifySamlPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2290,7 +2434,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifySamlProperties(input: ModifySamlPropertiesInput) async throws -> ModifySamlPropertiesOutputResponse
+    public func modifySamlProperties(input: ModifySamlPropertiesInput) async throws -> ModifySamlPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2301,26 +2445,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>(id: "modifySamlProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifySamlPropertiesInput, ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>(id: "modifySamlProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifySamlProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse>(xmlName: "ModifySamlPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutput>(xAmzTarget: "WorkspacesService.ModifySamlProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutput>(xmlName: "ModifySamlPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifySamlPropertiesInput, ModifySamlPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifySamlPropertiesOutputResponse, ModifySamlPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifySamlPropertiesOutput, ModifySamlPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2329,7 +2476,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifySelfservicePermissionsInput : [no documentation found]
     ///
-    /// - Returns: `ModifySelfservicePermissionsOutputResponse` : [no documentation found]
+    /// - Returns: `ModifySelfservicePermissionsOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2337,7 +2484,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifySelfservicePermissions(input: ModifySelfservicePermissionsInput) async throws -> ModifySelfservicePermissionsOutputResponse
+    public func modifySelfservicePermissions(input: ModifySelfservicePermissionsInput) async throws -> ModifySelfservicePermissionsOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2348,26 +2495,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>(id: "modifySelfservicePermissions")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>(id: "modifySelfservicePermissions")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse>(xAmzTarget: "WorkspacesService.ModifySelfservicePermissions"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse>(xmlName: "ModifySelfservicePermissionsRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput>(xAmzTarget: "WorkspacesService.ModifySelfservicePermissions"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput>(xmlName: "ModifySelfservicePermissionsRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifySelfservicePermissionsInput, ModifySelfservicePermissionsOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifySelfservicePermissionsOutputResponse, ModifySelfservicePermissionsOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifySelfservicePermissionsOutput, ModifySelfservicePermissionsOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2376,14 +2526,14 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyWorkspaceAccessPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifyWorkspaceAccessPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyWorkspaceAccessPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifyWorkspaceAccessProperties(input: ModifyWorkspaceAccessPropertiesInput) async throws -> ModifyWorkspaceAccessPropertiesOutputResponse
+    public func modifyWorkspaceAccessProperties(input: ModifyWorkspaceAccessPropertiesInput) async throws -> ModifyWorkspaceAccessPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2394,26 +2544,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>(id: "modifyWorkspaceAccessProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>(id: "modifyWorkspaceAccessProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifyWorkspaceAccessProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse>(xmlName: "ModifyWorkspaceAccessPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput>(xAmzTarget: "WorkspacesService.ModifyWorkspaceAccessProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput>(xmlName: "ModifyWorkspaceAccessPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceAccessPropertiesInput, ModifyWorkspaceAccessPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceAccessPropertiesOutputResponse, ModifyWorkspaceAccessPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceAccessPropertiesOutput, ModifyWorkspaceAccessPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2422,7 +2575,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyWorkspaceCreationPropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifyWorkspaceCreationPropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyWorkspaceCreationPropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2431,7 +2584,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifyWorkspaceCreationProperties(input: ModifyWorkspaceCreationPropertiesInput) async throws -> ModifyWorkspaceCreationPropertiesOutputResponse
+    public func modifyWorkspaceCreationProperties(input: ModifyWorkspaceCreationPropertiesInput) async throws -> ModifyWorkspaceCreationPropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2442,26 +2595,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>(id: "modifyWorkspaceCreationProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>(id: "modifyWorkspaceCreationProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifyWorkspaceCreationProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse>(xmlName: "ModifyWorkspaceCreationPropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput>(xAmzTarget: "WorkspacesService.ModifyWorkspaceCreationProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput>(xmlName: "ModifyWorkspaceCreationPropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceCreationPropertiesInput, ModifyWorkspaceCreationPropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceCreationPropertiesOutputResponse, ModifyWorkspaceCreationPropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceCreationPropertiesOutput, ModifyWorkspaceCreationPropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2470,7 +2626,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyWorkspacePropertiesInput : [no documentation found]
     ///
-    /// - Returns: `ModifyWorkspacePropertiesOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyWorkspacePropertiesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2485,7 +2641,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     ///
     /// [Required Configuration and Service Components for WorkSpaces ](https://docs.aws.amazon.com/workspaces/latest/adminguide/required-service-components.html).
-    public func modifyWorkspaceProperties(input: ModifyWorkspacePropertiesInput) async throws -> ModifyWorkspacePropertiesOutputResponse
+    public func modifyWorkspaceProperties(input: ModifyWorkspacePropertiesInput) async throws -> ModifyWorkspacePropertiesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2496,26 +2652,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>(id: "modifyWorkspaceProperties")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>(id: "modifyWorkspaceProperties")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse>(xAmzTarget: "WorkspacesService.ModifyWorkspaceProperties"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse>(xmlName: "ModifyWorkspacePropertiesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput>(xAmzTarget: "WorkspacesService.ModifyWorkspaceProperties"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput>(xmlName: "ModifyWorkspacePropertiesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspacePropertiesInput, ModifyWorkspacePropertiesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspacePropertiesOutputResponse, ModifyWorkspacePropertiesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspacePropertiesOutput, ModifyWorkspacePropertiesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2524,7 +2683,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter ModifyWorkspaceStateInput : [no documentation found]
     ///
-    /// - Returns: `ModifyWorkspaceStateOutputResponse` : [no documentation found]
+    /// - Returns: `ModifyWorkspaceStateOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2533,7 +2692,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func modifyWorkspaceState(input: ModifyWorkspaceStateInput) async throws -> ModifyWorkspaceStateOutputResponse
+    public func modifyWorkspaceState(input: ModifyWorkspaceStateInput) async throws -> ModifyWorkspaceStateOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2544,26 +2703,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>(id: "modifyWorkspaceState")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse>())
+        var operation = ClientRuntime.OperationStack<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>(id: "modifyWorkspaceState")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse>(xAmzTarget: "WorkspacesService.ModifyWorkspaceState"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse>(xmlName: "ModifyWorkspaceStateRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput>(xAmzTarget: "WorkspacesService.ModifyWorkspaceState"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput>(xmlName: "ModifyWorkspaceStateRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<ModifyWorkspaceStateInput, ModifyWorkspaceStateOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceStateOutputResponse, ModifyWorkspaceStateOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<ModifyWorkspaceStateOutput, ModifyWorkspaceStateOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2572,13 +2734,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter RebootWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `RebootWorkspacesOutputResponse` : [no documentation found]
+    /// - Returns: `RebootWorkspacesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `OperationNotSupportedException` : This operation is not supported.
-    public func rebootWorkspaces(input: RebootWorkspacesInput) async throws -> RebootWorkspacesOutputResponse
+    public func rebootWorkspaces(input: RebootWorkspacesInput) async throws -> RebootWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2589,26 +2751,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RebootWorkspacesInput, RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>(id: "rebootWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RebootWorkspacesInput, RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RebootWorkspacesInput, RebootWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RebootWorkspacesInput, RebootWorkspacesOutput, RebootWorkspacesOutputError>(id: "rebootWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RebootWorkspacesInput, RebootWorkspacesOutput, RebootWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RebootWorkspacesInput, RebootWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RebootWorkspacesOutput, RebootWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RebootWorkspacesInput, RebootWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.RebootWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RebootWorkspacesInput, RebootWorkspacesOutputResponse>(xmlName: "RebootWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RebootWorkspacesInput, RebootWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, RebootWorkspacesOutput, RebootWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RebootWorkspacesInput, RebootWorkspacesOutput>(xAmzTarget: "WorkspacesService.RebootWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RebootWorkspacesInput, RebootWorkspacesOutput>(xmlName: "RebootWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RebootWorkspacesInput, RebootWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RebootWorkspacesOutputResponse, RebootWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RebootWorkspacesOutput, RebootWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RebootWorkspacesOutput, RebootWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RebootWorkspacesOutput, RebootWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RebootWorkspacesOutput, RebootWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2617,13 +2782,13 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter RebuildWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `RebuildWorkspacesOutputResponse` : [no documentation found]
+    /// - Returns: `RebuildWorkspacesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
     /// __Possible Exceptions:__
     /// - `OperationNotSupportedException` : This operation is not supported.
-    public func rebuildWorkspaces(input: RebuildWorkspacesInput) async throws -> RebuildWorkspacesOutputResponse
+    public func rebuildWorkspaces(input: RebuildWorkspacesInput) async throws -> RebuildWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2634,26 +2799,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>(id: "rebuildWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RebuildWorkspacesInput, RebuildWorkspacesOutput, RebuildWorkspacesOutputError>(id: "rebuildWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutput, RebuildWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RebuildWorkspacesOutput, RebuildWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.RebuildWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse>(xmlName: "RebuildWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, RebuildWorkspacesOutput, RebuildWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutput>(xAmzTarget: "WorkspacesService.RebuildWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutput>(xmlName: "RebuildWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RebuildWorkspacesInput, RebuildWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RebuildWorkspacesOutputResponse, RebuildWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RebuildWorkspacesOutput, RebuildWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RebuildWorkspacesOutput, RebuildWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RebuildWorkspacesOutput, RebuildWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RebuildWorkspacesOutput, RebuildWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2662,7 +2830,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter RegisterWorkspaceDirectoryInput : [no documentation found]
     ///
-    /// - Returns: `RegisterWorkspaceDirectoryOutputResponse` : [no documentation found]
+    /// - Returns: `RegisterWorkspaceDirectoryOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2675,7 +2843,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `UnsupportedNetworkConfigurationException` : The configuration of this network is not supported for this operation, or your network configuration conflicts with the Amazon WorkSpaces management network IP range. For more information, see [ Configure a VPC for Amazon WorkSpaces](https://docs.aws.amazon.com/workspaces/latest/adminguide/amazon-workspaces-vpc.html).
     /// - `WorkspacesDefaultRoleNotFoundException` : The workspaces_DefaultRole role could not be found. If this is the first time you are registering a directory, you will need to create the workspaces_DefaultRole role before you can register a directory. For more information, see [Creating the workspaces_DefaultRole Role](https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-access-control.html#create-default-role).
-    public func registerWorkspaceDirectory(input: RegisterWorkspaceDirectoryInput) async throws -> RegisterWorkspaceDirectoryOutputResponse
+    public func registerWorkspaceDirectory(input: RegisterWorkspaceDirectoryInput) async throws -> RegisterWorkspaceDirectoryOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2686,26 +2854,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>(id: "registerWorkspaceDirectory")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>(id: "registerWorkspaceDirectory")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse>(xAmzTarget: "WorkspacesService.RegisterWorkspaceDirectory"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse>(xmlName: "RegisterWorkspaceDirectoryRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput>(xAmzTarget: "WorkspacesService.RegisterWorkspaceDirectory"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput>(xmlName: "RegisterWorkspaceDirectoryRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RegisterWorkspaceDirectoryInput, RegisterWorkspaceDirectoryOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RegisterWorkspaceDirectoryOutputResponse, RegisterWorkspaceDirectoryOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RegisterWorkspaceDirectoryOutput, RegisterWorkspaceDirectoryOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2714,7 +2885,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter RestoreWorkspaceInput : [no documentation found]
     ///
-    /// - Returns: `RestoreWorkspaceOutputResponse` : [no documentation found]
+    /// - Returns: `RestoreWorkspaceOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2723,7 +2894,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func restoreWorkspace(input: RestoreWorkspaceInput) async throws -> RestoreWorkspaceOutputResponse
+    public func restoreWorkspace(input: RestoreWorkspaceInput) async throws -> RestoreWorkspaceOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2734,26 +2905,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>(id: "restoreWorkspace")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RestoreWorkspaceInput, RestoreWorkspaceOutput, RestoreWorkspaceOutputError>(id: "restoreWorkspace")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutput, RestoreWorkspaceOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RestoreWorkspaceOutput, RestoreWorkspaceOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse>(xAmzTarget: "WorkspacesService.RestoreWorkspace"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse>(xmlName: "RestoreWorkspaceRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, RestoreWorkspaceOutput, RestoreWorkspaceOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutput>(xAmzTarget: "WorkspacesService.RestoreWorkspace"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutput>(xmlName: "RestoreWorkspaceRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RestoreWorkspaceInput, RestoreWorkspaceOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RestoreWorkspaceOutputResponse, RestoreWorkspaceOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RestoreWorkspaceOutput, RestoreWorkspaceOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RestoreWorkspaceOutput, RestoreWorkspaceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RestoreWorkspaceOutput, RestoreWorkspaceOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RestoreWorkspaceOutput, RestoreWorkspaceOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2762,7 +2936,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter RevokeIpRulesInput : [no documentation found]
     ///
-    /// - Returns: `RevokeIpRulesOutputResponse` : [no documentation found]
+    /// - Returns: `RevokeIpRulesOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2771,7 +2945,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func revokeIpRules(input: RevokeIpRulesInput) async throws -> RevokeIpRulesOutputResponse
+    public func revokeIpRules(input: RevokeIpRulesInput) async throws -> RevokeIpRulesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2782,26 +2956,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<RevokeIpRulesInput, RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>(id: "revokeIpRules")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RevokeIpRulesInput, RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RevokeIpRulesInput, RevokeIpRulesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<RevokeIpRulesInput, RevokeIpRulesOutput, RevokeIpRulesOutputError>(id: "revokeIpRules")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<RevokeIpRulesInput, RevokeIpRulesOutput, RevokeIpRulesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<RevokeIpRulesInput, RevokeIpRulesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<RevokeIpRulesOutput, RevokeIpRulesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RevokeIpRulesInput, RevokeIpRulesOutputResponse>(xAmzTarget: "WorkspacesService.RevokeIpRules"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RevokeIpRulesInput, RevokeIpRulesOutputResponse>(xmlName: "RevokeIpRulesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RevokeIpRulesInput, RevokeIpRulesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, RevokeIpRulesOutput, RevokeIpRulesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<RevokeIpRulesInput, RevokeIpRulesOutput>(xAmzTarget: "WorkspacesService.RevokeIpRules"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<RevokeIpRulesInput, RevokeIpRulesOutput>(xmlName: "RevokeIpRulesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<RevokeIpRulesInput, RevokeIpRulesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RevokeIpRulesOutputResponse, RevokeIpRulesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, RevokeIpRulesOutput, RevokeIpRulesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<RevokeIpRulesOutput, RevokeIpRulesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<RevokeIpRulesOutput, RevokeIpRulesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<RevokeIpRulesOutput, RevokeIpRulesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2810,8 +2987,8 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter StartWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `StartWorkspacesOutputResponse` : [no documentation found]
-    public func startWorkspaces(input: StartWorkspacesInput) async throws -> StartWorkspacesOutputResponse
+    /// - Returns: `StartWorkspacesOutput` : [no documentation found]
+    public func startWorkspaces(input: StartWorkspacesInput) async throws -> StartWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2822,26 +2999,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<StartWorkspacesInput, StartWorkspacesOutputResponse, StartWorkspacesOutputError>(id: "startWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StartWorkspacesInput, StartWorkspacesOutputResponse, StartWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StartWorkspacesInput, StartWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<StartWorkspacesInput, StartWorkspacesOutput, StartWorkspacesOutputError>(id: "startWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StartWorkspacesInput, StartWorkspacesOutput, StartWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StartWorkspacesInput, StartWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StartWorkspacesOutputResponse, StartWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StartWorkspacesOutput, StartWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<StartWorkspacesInput, StartWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.StartWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StartWorkspacesInput, StartWorkspacesOutputResponse>(xmlName: "StartWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StartWorkspacesInput, StartWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, StartWorkspacesOutput, StartWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<StartWorkspacesInput, StartWorkspacesOutput>(xAmzTarget: "WorkspacesService.StartWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StartWorkspacesInput, StartWorkspacesOutput>(xmlName: "StartWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StartWorkspacesInput, StartWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StartWorkspacesOutputResponse, StartWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<StartWorkspacesOutputResponse, StartWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StartWorkspacesOutputResponse, StartWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StartWorkspacesOutputResponse, StartWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StartWorkspacesOutput, StartWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<StartWorkspacesOutput, StartWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StartWorkspacesOutput, StartWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StartWorkspacesOutput, StartWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2850,8 +3030,8 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter StopWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `StopWorkspacesOutputResponse` : [no documentation found]
-    public func stopWorkspaces(input: StopWorkspacesInput) async throws -> StopWorkspacesOutputResponse
+    /// - Returns: `StopWorkspacesOutput` : [no documentation found]
+    public func stopWorkspaces(input: StopWorkspacesInput) async throws -> StopWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2862,26 +3042,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<StopWorkspacesInput, StopWorkspacesOutputResponse, StopWorkspacesOutputError>(id: "stopWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StopWorkspacesInput, StopWorkspacesOutputResponse, StopWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StopWorkspacesInput, StopWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<StopWorkspacesInput, StopWorkspacesOutput, StopWorkspacesOutputError>(id: "stopWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<StopWorkspacesInput, StopWorkspacesOutput, StopWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<StopWorkspacesInput, StopWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StopWorkspacesOutputResponse, StopWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<StopWorkspacesOutput, StopWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<StopWorkspacesInput, StopWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.StopWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StopWorkspacesInput, StopWorkspacesOutputResponse>(xmlName: "StopWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StopWorkspacesInput, StopWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, StopWorkspacesOutput, StopWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<StopWorkspacesInput, StopWorkspacesOutput>(xAmzTarget: "WorkspacesService.StopWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<StopWorkspacesInput, StopWorkspacesOutput>(xmlName: "StopWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<StopWorkspacesInput, StopWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StopWorkspacesOutputResponse, StopWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<StopWorkspacesOutputResponse, StopWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StopWorkspacesOutputResponse, StopWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StopWorkspacesOutputResponse, StopWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, StopWorkspacesOutput, StopWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<StopWorkspacesOutput, StopWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<StopWorkspacesOutput, StopWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<StopWorkspacesOutput, StopWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2890,8 +3073,8 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter TerminateWorkspacesInput : [no documentation found]
     ///
-    /// - Returns: `TerminateWorkspacesOutputResponse` : [no documentation found]
-    public func terminateWorkspaces(input: TerminateWorkspacesInput) async throws -> TerminateWorkspacesOutputResponse
+    /// - Returns: `TerminateWorkspacesOutput` : [no documentation found]
+    public func terminateWorkspaces(input: TerminateWorkspacesInput) async throws -> TerminateWorkspacesOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2902,26 +3085,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>(id: "terminateWorkspaces")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse>())
+        var operation = ClientRuntime.OperationStack<TerminateWorkspacesInput, TerminateWorkspacesOutput, TerminateWorkspacesOutputError>(id: "terminateWorkspaces")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutput, TerminateWorkspacesOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<TerminateWorkspacesOutput, TerminateWorkspacesOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse>(xAmzTarget: "WorkspacesService.TerminateWorkspaces"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse>(xmlName: "TerminateWorkspacesRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, TerminateWorkspacesOutput, TerminateWorkspacesOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutput>(xAmzTarget: "WorkspacesService.TerminateWorkspaces"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutput>(xmlName: "TerminateWorkspacesRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<TerminateWorkspacesInput, TerminateWorkspacesOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TerminateWorkspacesOutputResponse, TerminateWorkspacesOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, TerminateWorkspacesOutput, TerminateWorkspacesOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<TerminateWorkspacesOutput, TerminateWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<TerminateWorkspacesOutput, TerminateWorkspacesOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<TerminateWorkspacesOutput, TerminateWorkspacesOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2930,7 +3116,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter UpdateConnectClientAddInInput : [no documentation found]
     ///
-    /// - Returns: `UpdateConnectClientAddInOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateConnectClientAddInOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2938,7 +3124,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `AccessDeniedException` : The user is not authorized to access a resource.
     /// - `InvalidParameterValuesException` : One or more parameter values are not valid.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func updateConnectClientAddIn(input: UpdateConnectClientAddInInput) async throws -> UpdateConnectClientAddInOutputResponse
+    public func updateConnectClientAddIn(input: UpdateConnectClientAddInInput) async throws -> UpdateConnectClientAddInOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -2949,26 +3135,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>(id: "updateConnectClientAddIn")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>(id: "updateConnectClientAddIn")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse>(xAmzTarget: "WorkspacesService.UpdateConnectClientAddIn"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse>(xmlName: "UpdateConnectClientAddInRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput>(xAmzTarget: "WorkspacesService.UpdateConnectClientAddIn"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput>(xmlName: "UpdateConnectClientAddInRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateConnectClientAddInInput, UpdateConnectClientAddInOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateConnectClientAddInOutputResponse, UpdateConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateConnectClientAddInOutput, UpdateConnectClientAddInOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -2981,7 +3170,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter UpdateConnectionAliasPermissionInput : [no documentation found]
     ///
-    /// - Returns: `UpdateConnectionAliasPermissionOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateConnectionAliasPermissionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -2993,7 +3182,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `ResourceAssociatedException` : The resource is associated with a directory.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func updateConnectionAliasPermission(input: UpdateConnectionAliasPermissionInput) async throws -> UpdateConnectionAliasPermissionOutputResponse
+    public func updateConnectionAliasPermission(input: UpdateConnectionAliasPermissionInput) async throws -> UpdateConnectionAliasPermissionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -3004,26 +3193,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>(id: "updateConnectionAliasPermission")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>(id: "updateConnectionAliasPermission")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse>(xAmzTarget: "WorkspacesService.UpdateConnectionAliasPermission"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse>(xmlName: "UpdateConnectionAliasPermissionRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput>(xAmzTarget: "WorkspacesService.UpdateConnectionAliasPermission"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput>(xmlName: "UpdateConnectionAliasPermissionRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateConnectionAliasPermissionInput, UpdateConnectionAliasPermissionOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateConnectionAliasPermissionOutputResponse, UpdateConnectionAliasPermissionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateConnectionAliasPermissionOutput, UpdateConnectionAliasPermissionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -3032,7 +3224,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter UpdateRulesOfIpGroupInput : [no documentation found]
     ///
-    /// - Returns: `UpdateRulesOfIpGroupOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateRulesOfIpGroupOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -3042,7 +3234,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `InvalidResourceStateException` : The state of the resource is not valid for this operation.
     /// - `ResourceLimitExceededException` : Your resource limits have been exceeded.
     /// - `ResourceNotFoundException` : The resource could not be found.
-    public func updateRulesOfIpGroup(input: UpdateRulesOfIpGroupInput) async throws -> UpdateRulesOfIpGroupOutputResponse
+    public func updateRulesOfIpGroup(input: UpdateRulesOfIpGroupInput) async throws -> UpdateRulesOfIpGroupOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -3053,26 +3245,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>(id: "updateRulesOfIpGroup")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>(id: "updateRulesOfIpGroup")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse>(xAmzTarget: "WorkspacesService.UpdateRulesOfIpGroup"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse>(xmlName: "UpdateRulesOfIpGroupRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput>(xAmzTarget: "WorkspacesService.UpdateRulesOfIpGroup"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput>(xmlName: "UpdateRulesOfIpGroupRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateRulesOfIpGroupInput, UpdateRulesOfIpGroupOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateRulesOfIpGroupOutputResponse, UpdateRulesOfIpGroupOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateRulesOfIpGroupOutput, UpdateRulesOfIpGroupOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -3081,7 +3276,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter UpdateWorkspaceBundleInput : [no documentation found]
     ///
-    /// - Returns: `UpdateWorkspaceBundleOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateWorkspaceBundleOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -3091,7 +3286,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func updateWorkspaceBundle(input: UpdateWorkspaceBundleInput) async throws -> UpdateWorkspaceBundleOutputResponse
+    public func updateWorkspaceBundle(input: UpdateWorkspaceBundleInput) async throws -> UpdateWorkspaceBundleOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -3102,26 +3297,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>(id: "updateWorkspaceBundle")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>(id: "updateWorkspaceBundle")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse>(xAmzTarget: "WorkspacesService.UpdateWorkspaceBundle"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse>(xmlName: "UpdateWorkspaceBundleRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput>(xAmzTarget: "WorkspacesService.UpdateWorkspaceBundle"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput>(xmlName: "UpdateWorkspaceBundleRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateWorkspaceBundleInput, UpdateWorkspaceBundleOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateWorkspaceBundleOutputResponse, UpdateWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateWorkspaceBundleOutput, UpdateWorkspaceBundleOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }
@@ -3134,7 +3332,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     ///
     /// - Parameter UpdateWorkspaceImagePermissionInput : [no documentation found]
     ///
-    /// - Returns: `UpdateWorkspaceImagePermissionOutputResponse` : [no documentation found]
+    /// - Returns: `UpdateWorkspaceImagePermissionOutput` : [no documentation found]
     ///
     /// - Throws: One of the exceptions listed below __Possible Exceptions__.
     ///
@@ -3144,7 +3342,7 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
     /// - `OperationNotSupportedException` : This operation is not supported.
     /// - `ResourceNotFoundException` : The resource could not be found.
     /// - `ResourceUnavailableException` : The specified resource is not available.
-    public func updateWorkspaceImagePermission(input: UpdateWorkspaceImagePermissionInput) async throws -> UpdateWorkspaceImagePermissionOutputResponse
+    public func updateWorkspaceImagePermission(input: UpdateWorkspaceImagePermissionInput) async throws -> UpdateWorkspaceImagePermissionOutput
     {
         let context = ClientRuntime.HttpContextBuilder()
                       .withEncoder(value: encoder)
@@ -3155,26 +3353,29 @@ extension WorkSpacesClient: WorkSpacesClientProtocol {
                       .withIdempotencyTokenGenerator(value: config.idempotencyTokenGenerator)
                       .withLogger(value: config.logger)
                       .withPartitionID(value: config.partitionID)
+                      .withAuthSchemes(value: config.authSchemes!)
+                      .withAuthSchemeResolver(value: config.serviceSpecific.authSchemeResolver)
                       .withCredentialsProvider(value: config.credentialsProvider)
+                      .withIdentityResolver(value: config.credentialsProvider, type: IdentityKind.aws)
                       .withRegion(value: config.region)
                       .withSigningName(value: "workspaces")
                       .withSigningRegion(value: config.signingRegion)
                       .build()
-        var operation = ClientRuntime.OperationStack<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>(id: "updateWorkspaceImagePermission")
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>())
-        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse>())
+        var operation = ClientRuntime.OperationStack<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>(id: "updateWorkspaceImagePermission")
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLPathMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>())
+        operation.initializeStep.intercept(position: .after, middleware: ClientRuntime.URLHostMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput>())
         let endpointParams = EndpointParams(endpoint: config.endpoint, region: config.region, useDualStack: config.useDualStack ?? false, useFIPS: config.useFIPS ?? false)
-        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
+        operation.buildStep.intercept(position: .before, middleware: EndpointResolverMiddleware<UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>(endpointResolver: config.serviceSpecific.endpointResolver, endpointParams: endpointParams))
         operation.buildStep.intercept(position: .before, middleware: AWSClientRuntime.UserAgentMiddleware(metadata: AWSClientRuntime.AWSUserAgentMetadata.fromConfig(serviceID: serviceName, version: "1.0", config: config)))
-        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse>(xAmzTarget: "WorkspacesService.UpdateWorkspaceImagePermission"))
-        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse>(xmlName: "UpdateWorkspaceImagePermissionRequest"))
-        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutputResponse>(contentType: "application/x-amz-json-1.1"))
+        operation.buildStep.intercept(position: .before, middleware: ClientRuntime.AuthSchemeMiddleware<WorkSpacesAuthSchemeResolver, UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>())
+        operation.serializeStep.intercept(position: .before, middleware: AWSClientRuntime.XAmzTargetMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput>(xAmzTarget: "WorkspacesService.UpdateWorkspaceImagePermission"))
+        operation.serializeStep.intercept(position: .after, middleware: ClientRuntime.SerializableBodyMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput>(xmlName: "UpdateWorkspaceImagePermissionRequest"))
+        operation.serializeStep.intercept(position: .after, middleware: ContentTypeMiddleware<UpdateWorkspaceImagePermissionInput, UpdateWorkspaceImagePermissionOutput>(contentType: "application/x-amz-json-1.1"))
         operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.ContentLengthMiddleware())
-        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>(options: config.retryStrategyOptions))
-        let sigv4Config = AWSClientRuntime.SigV4Config(unsignedBody: false, signingAlgorithm: .sigv4)
-        operation.finalizeStep.intercept(position: .before, middleware: AWSClientRuntime.SigV4Middleware<UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>(config: sigv4Config))
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>())
-        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateWorkspaceImagePermissionOutputResponse, UpdateWorkspaceImagePermissionOutputError>(clientLogMode: config.clientLogMode))
+        operation.finalizeStep.intercept(position: .after, middleware: ClientRuntime.RetryMiddleware<ClientRuntime.DefaultRetryStrategy, AWSClientRuntime.AWSRetryErrorInfoProvider, UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>(options: config.retryStrategyOptions))
+        operation.finalizeStep.intercept(position: .before, middleware: ClientRuntime.SignerMiddleware<UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.DeserializeMiddleware<UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>())
+        operation.deserializeStep.intercept(position: .after, middleware: ClientRuntime.LoggerMiddleware<UpdateWorkspaceImagePermissionOutput, UpdateWorkspaceImagePermissionOutputError>(clientLogMode: config.clientLogMode))
         let result = try await operation.handleMiddleware(context: context, input: input, next: client.getHandler())
         return result
     }

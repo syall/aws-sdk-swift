@@ -40,6 +40,7 @@ open class AWSSigningMiddleware(
         writer: SwiftWriter,
         op: OperationShape,
         operationStackName: String,
+        clientName: String?,
     ) {
         renderConfigDeclaration(writer)
         val output = MiddlewareShapeUtils.outputSymbol(symbolProvider, model, op)
