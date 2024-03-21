@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.9
 
 //
 // Copyright Amazon.com Inc. or its affiliates.
@@ -24,6 +24,12 @@ extension Target.Dependency {
 
 // MARK: - Base Package
 
+#if swift(>=5.9)
+let swiftSettings = [SwiftSetting.enableExperimentalFeature("StrictConcurrency", .when(configuration: .debug))]
+#else
+let swiftSettings = [SwiftSetting]()
+#endif
+
 let package = Package(
     name: "aws-sdk-swift",
     platforms: [
@@ -39,18 +45,21 @@ let package = Package(
         .target(
             name: "AWSSDKForSwift",
             path: "Sources/Core/AWSSDKForSwift",
-            exclude: ["Documentation.docc/AWSSDKForSwift.md"]
+            exclude: ["Documentation.docc/AWSSDKForSwift.md"],
+            swiftSettings: swiftSettings
         ),
         .target(
             name: "AWSClientRuntime",
             dependencies: [.crt, .clientRuntime],
-            path: "./Sources/Core/AWSClientRuntime"
+            path: "./Sources/Core/AWSClientRuntime",
+            swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "AWSClientRuntimeTests",
             dependencies: [.awsClientRuntime, .clientRuntime, .smithyTestUtils],
             path: "./Tests/Core/AWSClientRuntimeTests",
-            resources: [.process("Resources")]
+            resources: [.process("Resources")],
+            swiftSettings: swiftSettings
         )
     ]
 )
@@ -107,7 +116,8 @@ func addServiceTarget(_ name: String) {
         .target(
             name: name,
             dependencies: [.clientRuntime, .awsClientRuntime],
-            path: "./Sources/Services/\(name)"
+            path: "./Sources/Services/\(name)",
+            swiftSettings: swiftSettings
         )
     ]
 }
@@ -118,7 +128,8 @@ func addServiceUnitTestTarget(_ name: String) {
         .testTarget(
             name: "\(testName)",
             dependencies: [.crt, .clientRuntime, .awsClientRuntime, .byName(name: name), .smithyTestUtils],
-            path: "./Tests/Services/\(testName)"
+            path: "./Tests/Services/\(testName)",
+            swiftSettings: swiftSettings
         )
     ]
 }
@@ -158,7 +169,8 @@ func addIntegrationTestTarget(_ name: String) {
             dependencies: [.crt, .clientRuntime, .awsClientRuntime, .byName(name: name), .smithyTestUtils] + additionalDependencies.map { Target.Dependency.target(name: $0, condition: nil) },
             path: "./IntegrationTests/Services/\(integrationTestName)",
             exclude: exclusions,
-            resources: [.process("Resources")]
+            resources: [.process("Resources")],
+            swiftSettings: swiftSettings
         )
     ]
 }
@@ -221,12 +233,14 @@ func addProtocolTests() {
             .target(
                 name: protocolTest.name,
                 dependencies: [.clientRuntime, .awsClientRuntime],
-                path: "\(protocolTest.sourcePath)/swift-codegen/\(protocolTest.name)"
+                path: "\(protocolTest.sourcePath)/swift-codegen/\(protocolTest.name)",
+                swiftSettings: swiftSettings
             ),
             .testTarget(
                 name: "\(protocolTest.name)Tests",
                 dependencies: [.smithyTestUtils, .byNameItem(name: protocolTest.name, condition: nil)],
-                path: "\(protocolTest.testPath ?? protocolTest.sourcePath)/swift-codegen/\(protocolTest.name)Tests"
+                path: "\(protocolTest.testPath ?? protocolTest.sourcePath)/swift-codegen/\(protocolTest.name)Tests",
+                swiftSettings: swiftSettings
             )
         ]
     }
